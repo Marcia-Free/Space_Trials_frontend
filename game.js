@@ -17,6 +17,7 @@ let config = {
         update: update,
     },
 };
+console.log("test");
 
 let player;
 let stars;
