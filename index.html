@@ -14,7 +14,7 @@
             default: 'arcade',
             arcade: {
                 gravity: { y: 600 },
-                debug: false
+                debug: true
             }
         },
         scene: {
@@ -71,6 +71,9 @@
         platforms.setCollisionByExclusion(-1, true);
         
         player = this.physics.add.sprite(40, 570, 'char');
+        player.body.setSize(20, 40, 28)
+        player.body.setOffset(20, 10)
+
         player.setCollideWorldBounds(true);
 
 
@@ -156,51 +159,54 @@
         if (cursors.left.isDown) 
         {
             player.body.setVelocityX(-160);
-            player.body.onFloor() && player.anims.play('run', true);
+            player.body.onFloor() && player.anims.play('run', true) && playerCollider('default')
             player.flipX = true;
+
             lastKeyPress = 'left';
             animationPlayed = false;
         }
         else if (cursors.right.isDown)
         {
             player.body.setVelocityX(160);
-            player.body.onFloor() && player.anims.play('run', true);
+            player.body.onFloor() && player.anims.play('run', true) && playerCollider('default')
             player.flipX = false;
+
             lastKeyPress = 'right';
             animationPlayed = false;
         }
-        else if (cursors.down.isDown && player.body.onFloor())
+        else if (cursors.down.isDown)
         {
-            if (animationPlayed == false)
+            
+            if (animationPlayed == false && player.body.onFloor())
             {
                 animationPlayed = true;
-                player.anims.play('crouch');
+                player.anims.play('crouch') && playerCollider('crouch')
             }
             player.body.setVelocityX(0);
         }
         else 
         {
             if (lastKeyPress === 'left' && player.body.onFloor()) 
-            {
-                player.anims.play('idle', true);
+            {   
+                player.anims.play('idle', true) && playerCollider('default')
             }
-            else if ((lastKeyPress === 'right' && player.body.onFloor()))
+            else if (lastKeyPress === 'right' && player.body.onFloor())
             {
-                player.anims.play('idle', true);
+                player.anims.play('idle', true) && playerCollider('default')
             }
             else
             {
-                player.anims.play('jump', true);
+                player.anims.play('jump', true)
             }
-            
             player.body.setVelocityX(0);
         }
 
         if (cursors.space.isDown && player.body.onFloor())
         {
             player.body.setVelocityY(-330);
-            player.anims.play('jump', true);
+            player.anims.play('jump', true) && playerCollider('jump')
             animationPlayed = false;
+            
         }
 
     }
@@ -233,6 +239,7 @@
         }
     }
 
+
     function hitBomb (player, bomb)
 {
     this.physics.pause();
@@ -244,6 +251,24 @@
     gameOver = true;
 }
     
+
+    function playerCollider(animationKey) {
+        switch(animationKey) 
+        {
+            default:
+            player.body.setSize(20, 40, 28)
+            player.body.setOffset(20, 10) 
+                break;
+            case 'jump':
+                player.body.setSize(20, 25, 28)
+                break;
+            case 'crouch':
+                player.body.setSize(20, 30, 28)
+                player.body.setOffset(20, 20)
+                break;
+        }
+    }
+
     function render() {
 
     game.debug.cameraInfo(game.camera, 32, 32);
