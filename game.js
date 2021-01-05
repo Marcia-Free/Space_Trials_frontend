@@ -25,11 +25,15 @@ let score = 0;
 let gameOver = false;
 let scoreText;
 let stateText;
+let gameStart = true;
+let playButton;
 
 function preload() {
     this.load.image("sky", "assets/sky.png");
     this.load.image("star", "assets/star.png");
     this.load.image("bomb", "assets/bomb.png");
+    this.load.image("button-bg", "assets/button-bg.png");
+    this.load.image("button-text", "assets/button-text.png");
 
     this.load.spritesheet("pixel", "assets/Pixel.png", {
         frameWidth: 25,
@@ -41,6 +45,38 @@ function preload() {
 }
 
 function create() {
+    playButton = this.add.image(
+        this.game.config.width / 2,
+        this.game.config.height / 2,
+        "button-bg"
+    );
+    // .setDepth(1);
+
+    let text = this.add.image(
+        this.game.config.width / 2,
+        this.game.config.height / 2,
+        "button-text"
+    );
+
+    var container = this.add.container(0, 0).setDepth(1);
+
+    container.add(playButton);
+    container.add(text);
+
+    playButton.setInteractive();
+
+    playButton.once(
+        "pointerup",
+        function () {
+            // this.scene.start("create")
+            playButton.visible = false;
+            text.visible = false;
+        },
+        this
+    );
+
+    // button.onInputOver.add(create, this);
+
     //  A simple background for our game
     this.add.image(0, 0, "sky").setOrigin(0, 0);
 
@@ -127,8 +163,8 @@ function create() {
 
     this.physics.add.collider(player, bombs, hitBomb, null, this);
 
-    this.cameras.main.zoom = 1.5;
-    this.cameras.main.startFollow(player);
+    // this.cameras.main.zoom = 1.5;
+    // this.cameras.main.startFollow(player);
 }
 
 function update() {
@@ -144,6 +180,17 @@ function update() {
             "GAME OVER",
             textConfig
         );
+
+        this.data.set("score", score);
+
+        var text = this.add.text(player.x + 30, player.y + 30, "", {
+            fontSize: "35px",
+            fill: "#00ff00",
+            fontFamily: "Arial",
+        });
+
+        text.setText(["SCORE: " + this.data.get("score")]);
+        scoreText.visible = false;
     }
 
     if (cursors.left.isDown) {
@@ -199,4 +246,20 @@ function hitBomb(player, bomb) {
     player.anims.play("turn");
 
     gameOver = true;
+}
+
+function up() {
+    console.log("button up", arguments);
+}
+
+function over() {
+    console.log("button over");
+}
+
+function out() {
+    console.log("button out");
+}
+
+function actionOnClick() {
+    background.visible = !background.visible;
 }
