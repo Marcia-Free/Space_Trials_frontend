@@ -1,5 +1,3 @@
-import { generalFetch, makeOptions } from "Phase-3-frontend/fetch.js";
-
 let config = {
     type: Phaser.AUTO,
     width: 800,
@@ -17,7 +15,7 @@ let config = {
         update: update,
     },
 };
-console.log("test");
+let game = new Phaser.Game(config);
 
 let player;
 let stars;
@@ -26,8 +24,7 @@ let cursors;
 let score = 0;
 let gameOver = false;
 let scoreText;
-
-let game = new Phaser.Game(config);
+let stateText;
 
 function preload() {
     this.load.image("sky", "assets/sky.png");
@@ -136,7 +133,17 @@ function create() {
 
 function update() {
     if (gameOver) {
-        setTimeout(endGame, 5000);
+        let textConfig = {
+            fontSize: "35px",
+            color: "#ff0000",
+            fontFamily: "Arial",
+        };
+        this.add.text(
+            game.config.width / 2,
+            game.config.width / 2,
+            "GAME OVER",
+            textConfig
+        );
     }
 
     if (cursors.left.isDown) {
@@ -192,9 +199,4 @@ function hitBomb(player, bomb) {
     player.anims.play("turn");
 
     gameOver = true;
-}
-
-function endGame() {
-    document.querySelector("body").innerHTML = "<h1>TEST END PAGE</h1>";
-    generalFetch("http://localhost:3000/users").then(console.log);
 }
