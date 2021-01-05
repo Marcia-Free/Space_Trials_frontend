@@ -139,8 +139,8 @@ function update() {
             fontFamily: "Arial",
         };
         this.add.text(
-            game.config.width / 2,
-            game.config.width / 2,
+            player.x, // x axis
+            player.y, // y axis
             "GAME OVER",
             textConfig
         );
