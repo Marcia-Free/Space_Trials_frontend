@@ -42,6 +42,8 @@ function preload() {
 
     this.load.image("tiles", "assets/tilesets/tileset.png");
     this.load.tilemapTiledJSON("map", "assets/tilemaps/Level-Blockout2.json");
+    // this.physics.pause();
+    game.scene.pause("default");
 }
 
 function create() {
@@ -58,6 +60,7 @@ function create() {
         "button-text"
     );
 
+    
     var container = this.add.container(0, 0).setDepth(1);
 
     container.add(playButton);
@@ -68,14 +71,12 @@ function create() {
     playButton.once(
         "pointerup",
         function () {
-            // this.scene.start("create")
             playButton.visible = false;
             text.visible = false;
+            console.log(this);
         },
         this
     );
-
-    // button.onInputOver.add(create, this);
 
     //  A simple background for our game
     this.add.image(0, 0, "sky").setOrigin(0, 0);
@@ -246,20 +247,4 @@ function hitBomb(player, bomb) {
     player.anims.play("turn");
 
     gameOver = true;
-}
-
-function up() {
-    console.log("button up", arguments);
-}
-
-function over() {
-    console.log("button over");
-}
-
-function out() {
-    console.log("button out");
-}
-
-function actionOnClick() {
-    background.visible = !background.visible;
 }
