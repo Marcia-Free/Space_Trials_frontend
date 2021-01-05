@@ -14,7 +14,7 @@
             default: 'arcade',
             arcade: {
                 gravity: { y: 600 },
-                debug: true
+                debug: false
             }
         },
         scene: {
@@ -43,32 +43,27 @@
         this.load.image('star', 'assets/star.png');
         this.load.image('bomb', 'assets/bomb.png');
 
-        this.load.spritesheet('char', 'assets/player_spritesheet.png', { frameWidth: 56, frameHeight: 50 });
+        this.load.spritesheet('char', 'assets/player_spritesheet-recolor.png', { frameWidth: 56, frameHeight: 50 });
         this.load.spritesheet('robo', 'assets/bi-pedal_spritesheet.png', { frameWidth: 72, frameHeight: 79 });
 
-        this.load.image('tiles', 'assets/tilesets/tileset.png');
-        this.load.image('acid', 'assets/tilesets/acid-tileset.png');
-        
-        this.load.tilemapTiledJSON('map', 'assets/tilemaps/Level-Blockout-hazards.json');
+        this.load.image('tiles', 'assets/tilesets/tileset-merged.png');
+        this.load.tilemapTiledJSON('map', 'assets/tilemaps/space_station-tilesetMerged.json');
     }
 
     
     function create ()
     {
         //  A simple background for our game
-        this.add.image(0, 0, 'sky').setOrigin(0,0);
+        //this.add.image(0, 0, 'sky').setOrigin(0,0);
 
         const map = this.make.tilemap({ key: 'map' });
         const tileset = map.addTilesetImage('space-station', 'tiles');
-        const hazardTileset = map.addTilesetImage('hazard', 'acid');
-        
-        map.createStaticLayer('background', tileset, 0, -8);
 
-        const platforms = map.createStaticLayer('platforms', tileset, 0, -8);
-        platforms.setCollisionByExclusion(-1, true);
-        const walls = map.createStaticLayer('walls', tileset, 0, -8);
-        walls.setCollisionByExclusion(-1, true);
-        
+        map.createStaticLayer('sky', tileset, 0, -8);
+        map.createStaticLayer('background', tileset, 0, -8);
+        map.createStaticLayer('keycards', tileset, 0, -8);
+        map.createStaticLayer('tanks', tileset, 0, -8);
+    
         robo = this.add.sprite('robo');
         player = this.physics.add.sprite(40, 570, 'char');
         player.body.setSize(20, 40, 28)
@@ -76,14 +71,18 @@
         player.setCollideWorldBounds(true);
 
         //---------------------------------------------------Hazard Setup
-        const hazards = map.createStaticLayer('hazards', hazardTileset, 0, -8);
-        let hazardCollision_bottom = this.add.rectangle(448, 592, 640, 16, 0xa5c938)
-        let hazardCollision_top = this.add.rectangle(424, 122, 560, 28, 0xa5c938)
-
-        this.physics.world.enable(hazardCollision_bottom)
-        hazardCollision_bottom.body.moves = false
+        let hazardCollision_top = this.add.rectangle(424, 120, 560, 32, 0x29d911)
+        let hazardCollision_bottom = this.add.rectangle(448, 592, 640, 16, 0x29d911)
+        
+        const walls = map.createStaticLayer('walls', tileset, 0, -8);
+        const platforms = map.createStaticLayer('platforms', tileset, 0, -8);
+        walls.setCollisionByExclusion(-1, true);
+        platforms.setCollisionByExclusion(-1, true);
+        map.createStaticLayer('foreground', tileset, 0, -8);
 
         this.physics.world.enable(hazardCollision_top)
+        this.physics.world.enable(hazardCollision_bottom)
+        hazardCollision_bottom.body.moves = false
         hazardCollision_top.body.moves = false
 
         //------------Hazard Glow
@@ -104,7 +103,7 @@
             repeat: -1,
             ease: 'Sine.easeInOut'
         });
-
+        //---------------------------------------------ENEMY PATHING
 
 
         //let enemyPath  = this.add.graphics();
@@ -209,10 +208,10 @@
         this.physics.add.collider(player, hazardCollision_bottom, hitBomb, null, this);
         this.physics.add.collider(player, hazardCollision_top, hitBomb, null, this);
 
-        //this.cameras.main.zoom = 1.5;
        // game.camera.follow(player);
 
-       //this.cameras.main.startFollow(player);
+       this.cameras.main.zoom = 1.5;
+       this.cameras.main.startFollow(player);
         
     }
 
