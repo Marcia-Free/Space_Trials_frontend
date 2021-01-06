@@ -83,14 +83,7 @@ const UI = new Phaser.Class({
     },
 
     create: function () {
-        let text = this.add.text(10, 10, "Please login to play", {
-            color: "white",
-            fontFamily: "Arial",
-            fontSize: "32px ",
-        });
-        console.log(this);
-
-        element = scene.add.dom(400, 600).createFromCache("nameform");
+        element = this.add.dom(400, 600).createFromCache("nameform");
 
         element.setPerspective(800);
 
@@ -200,8 +193,8 @@ const UI = new Phaser.Class({
         }
 
         //  Add and update the score
-        score += 10;
-        scoreText.setText("Score: " + score);
+        // score += 10;
+        // scoreText.setText("Score: " + score);
     },
 });
 
