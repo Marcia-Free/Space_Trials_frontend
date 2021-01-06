@@ -60,7 +60,6 @@ function create() {
         "button-text"
     );
 
-    
     var container = this.add.container(0, 0).setDepth(1);
 
     container.add(playButton);
@@ -170,6 +169,7 @@ function create() {
 
 function update() {
     if (gameOver) {
+        input.style.display = "inline";
         let textConfig = {
             fontSize: "35px",
             color: "#ff0000",
