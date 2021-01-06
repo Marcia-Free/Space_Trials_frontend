@@ -176,7 +176,8 @@ const Level = new Phaser.Class({
         this.load.spritesheet('bug', 'assets/spritesheets/entities/bug_spritesheet.png', { frameWidth: 70, frameHeight: 41 });
 
         this.load.spritesheet('keycard', 'assets/spritesheets/objects/keycards.png', { frameWidth: 16, frameHeight: 16, endFrame: 47 });
-
+        this.load.spritesheet('laser', 'assets/spritesheets/objects/electro barrier.png', { frameWidth: 48, frameHeight: 16, endFrame: 5 });
+        
         this.load.image('tiles', 'assets/tilesets/tileset-merged.png');
         this.load.tilemapTiledJSON('map', 'assets/tilemaps/space_station-tilesetMerged.json');
     },
@@ -222,6 +223,9 @@ const Level = new Phaser.Class({
         key = this.physics.add.sprite(275, 380, 'keycard');
         key.body.moves = false
 
+        laser = this.physics.add.sprite(167, 320, 'laser');
+        laser.body.moves = false
+
         //------------Hazard Glow
         this.tweens.add
         ({
@@ -240,9 +244,67 @@ const Level = new Phaser.Class({
             ease: 'Sine.easeInOut'
         });
 
-        this.enemyPaths()
+    this.enemyPaths()
+
+    this.createAnimations()
     
 
+
+
+
+        //  Input Events
+        cursors = this.input.keyboard.createCursorKeys();
+
+        //  Some stars to collect, 12 in total, evenly spaced 70 pixels apart along the x axis
+        stars = this.physics.add.group({
+            key: 'star',
+            repeat: 4,
+            setXY: { x: 12, y: 0, stepX: 100 }
+        });
+
+        stars.children.iterate(function (child) {
+
+            //  Give each star a slightly different bounce
+            child.setBounceY(Phaser.Math.FloatBetween(0.1, 0.4));
+
+        });
+
+        bombs = this.physics.add.group();
+
+        //  The score
+        scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '24px', fill: '#000' });
+
+    this.startColliders(platforms, walls, hazardCollision_bottom, hazardCollision_bottom)
+        
+
+       //this.cameras.main.zoom = 1.5;
+       //this.cameras.main.startFollow(player);
+       this.cameras.main.setBounds(0, 0, 800, 600);
+
+        this.input.once('pointerdown', function () {
+
+            this.scene.resume('menu');
+
+        }, this);
+    },
+
+    update: function ()
+    {
+        key.anims.play('key-rotate', true)
+        laser.anims.play('laser1', true)
+
+    this.playerMove()
+    this.enemyAnim()
+
+            if (gameOver)
+            {
+                return;
+            }
+
+    },
+
+    
+    createAnimations() {
         //  Our player animations, turning, walking left and walking right.
         this.anims.create({
             key: 'idle',
@@ -306,30 +368,128 @@ const Level = new Phaser.Class({
             frameRate: 5,
             repeat: -1
         });
-
-
-        //  Input Events
-        cursors = this.input.keyboard.createCursorKeys();
-
-        //  Some stars to collect, 12 in total, evenly spaced 70 pixels apart along the x axis
-        stars = this.physics.add.group({
-            key: 'star',
-            repeat: 4,
-            setXY: { x: 12, y: 0, stepX: 100 }
+        this.anims.create({
+            key: 'laser1',
+            frames: this.anims.generateFrameNumbers('laser', { start: 0, end: 2 }),
+            frameRate: 15,
+            repeat: -1
         });
-
-        stars.children.iterate(function (child) {
-
-            //  Give each star a slightly different bounce
-            child.setBounceY(Phaser.Math.FloatBetween(0.1, 0.4));
-
+        this.anims.create({
+            key: 'laser2',
+            frames: this.anims.generateFrameNumbers('laser', { start: 3, end: 5 }),
+            frameRate: 15,
+            repeat: -1
         });
+    },
 
-        bombs = this.physics.add.group();
+    collectStar (player, star)
+    {
+        star.disableBody(true, true);
 
-        //  The score
-        scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '24px', fill: '#000' });
+        //  Add and update the score
+        score += 10;
+        scoreText.setText('Score: ' + score);
 
+        if (stars.countActive(true) === 0)
+        {
+            //  A new batch of stars to collect
+            stars.children.iterate(function (child) {
+
+                child.enableBody(true, child.x, 0, true, true);
+
+            });
+
+            let x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
+
+            let bomb = bombs.create(x, 16, 'bomb');
+            bomb.setBounce(1);
+            bomb.setCollideWorldBounds(true);
+            bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
+
+        }
+    },
+    hitBomb (player, bomb)
+    {
+        this.physics.pause();
+    
+        player.setTint(0xff0000);
+    
+        player.anims.play('die');
+    
+        gameOver = true;
+    },
+
+    playerMove() {
+        if (cursors.left.isDown) 
+        {
+            player.body.setVelocityX(-160);
+            player.body.onFloor() && player.anims.play('run', true) && this.playerCollider('default')
+            player.flipX = true;
+
+            lastKeyPress = 'left';
+            animationPlayed = false;
+        }
+        else if (cursors.right.isDown)
+        {
+            player.body.setVelocityX(160);
+            player.body.onFloor() && player.anims.play('run', true) && this.playerCollider('default')
+            player.flipX = false;
+
+            lastKeyPress = 'right';
+            animationPlayed = false;
+        }
+        else if (cursors.down.isDown)
+        {
+            
+            if (animationPlayed == false && player.body.onFloor())
+            {
+                animationPlayed = true;
+                player.anims.play('crouch') && this.playerCollider('crouch')
+            }
+            player.body.setVelocityX(0);
+        }
+        else 
+        {
+            if (lastKeyPress === 'left' && player.body.onFloor()) 
+            {   
+                player.anims.play('idle', true) && this.playerCollider('default')
+            }
+            else if (lastKeyPress === 'right' && player.body.onFloor())
+            {
+                player.anims.play('idle', true) && this.playerCollider('default')
+            }
+            else
+            {
+                player.anims.play('jump', true)
+            }
+            player.body.setVelocityX(0);
+        }
+
+        if (cursors.space.isDown && player.body.onFloor())
+        {
+            player.body.setVelocityY(-330);
+            player.anims.play('jump', true) && this.playerCollider('jump')
+            animationPlayed = false;
+            
+        }
+    },
+    playerCollider (animationKey) {
+        switch(animationKey) 
+        {
+            default:
+            player.body.setSize(20, 40, 28)
+            player.body.setOffset(20, 10) 
+                break;
+            case 'jump':
+                player.body.setSize(20, 25, 28)
+                break;
+            case 'crouch':
+                player.body.setSize(20, 30, 28)
+                player.body.setOffset(20, 20)
+                break;
+        }
+    },
+    startColliders(platforms, walls, hazardCollision_top, hazardCollision_bottom) {
         //  Collide the player and the stars with the platforms
         this.physics.add.collider(player, platforms);
         this.physics.add.collider(player, walls);
@@ -366,139 +526,6 @@ const Level = new Phaser.Class({
 
         this.physics.add.collider(player, hazardCollision_bottom, this.hitBomb, null, this);
         this.physics.add.collider(player, hazardCollision_top, this.hitBomb, null, this);
-
-       this.cameras.main.zoom = 1.5;
-       this.cameras.main.startFollow(player);
-       this.cameras.main.setBounds(0, 0, 800, 600);
-
-        this.input.once('pointerdown', function () {
-
-            this.scene.resume('menu');
-
-        }, this);
-    },
-
-    update: function ()
-    {
-        key.anims.play('key-rotate', true)
-
-        this.enemyAnim()
-
-
-            
-            if (gameOver)
-            {
-                return;
-            }
-
-
-            if (cursors.left.isDown) 
-            {
-                player.body.setVelocityX(-160);
-                player.body.onFloor() && player.anims.play('run', true) && this.playerCollider('default')
-                player.flipX = true;
-
-                lastKeyPress = 'left';
-                animationPlayed = false;
-            }
-            else if (cursors.right.isDown)
-            {
-                player.body.setVelocityX(160);
-                player.body.onFloor() && player.anims.play('run', true) && this.playerCollider('default')
-                player.flipX = false;
-
-                lastKeyPress = 'right';
-                animationPlayed = false;
-            }
-            else if (cursors.down.isDown)
-            {
-                
-                if (animationPlayed == false && player.body.onFloor())
-                {
-                    animationPlayed = true;
-                    player.anims.play('crouch') && this.playerCollider('crouch')
-                }
-                player.body.setVelocityX(0);
-            }
-            else 
-            {
-                if (lastKeyPress === 'left' && player.body.onFloor()) 
-                {   
-                    player.anims.play('idle', true) && this.playerCollider('default')
-                }
-                else if (lastKeyPress === 'right' && player.body.onFloor())
-                {
-                    player.anims.play('idle', true) && this.playerCollider('default')
-                }
-                else
-                {
-                    player.anims.play('jump', true)
-                }
-                player.body.setVelocityX(0);
-            }
-
-            if (cursors.space.isDown && player.body.onFloor())
-            {
-                player.body.setVelocityY(-330);
-                player.anims.play('jump', true) && this.playerCollider('jump')
-                animationPlayed = false;
-                
-            }
-    },
-
-    collectStar (player, star)
-    {
-        star.disableBody(true, true);
-
-        //  Add and update the score
-        score += 10;
-        scoreText.setText('Score: ' + score);
-
-        if (stars.countActive(true) === 0)
-        {
-            //  A new batch of stars to collect
-            stars.children.iterate(function (child) {
-
-                child.enableBody(true, child.x, 0, true, true);
-
-            });
-
-            let x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
-
-            let bomb = bombs.create(x, 16, 'bomb');
-            bomb.setBounce(1);
-            bomb.setCollideWorldBounds(true);
-            bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
-
-        }
-    },
-
-    hitBomb (player, bomb)
-    {
-        this.physics.pause();
-    
-        player.setTint(0xff0000);
-    
-        player.anims.play('die');
-    
-        gameOver = true;
-    },
-
-    playerCollider (animationKey) {
-        switch(animationKey) 
-        {
-            default:
-            player.body.setSize(20, 40, 28)
-            player.body.setOffset(20, 10) 
-                break;
-            case 'jump':
-                player.body.setSize(20, 25, 28)
-                break;
-            case 'crouch':
-                player.body.setSize(20, 30, 28)
-                player.body.setOffset(20, 20)
-                break;
-        }
     },
     
     enemyPaths () {
@@ -610,7 +637,6 @@ bug3.startFollow
    });
 
     },
-
     enemyAnim() {
     //400 625
     if (roboE.x >= 625) 
@@ -644,7 +670,9 @@ bug3.startFollow
 
 
 
-}
+    }
+
+
 
 });
 
@@ -674,7 +702,7 @@ var config = {
         arcade: 
         {
             gravity: { y: 600 },
-            debug: false
+            debug: true
         }
     }
 };
