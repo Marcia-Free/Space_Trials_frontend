@@ -1,10 +1,8 @@
-export { generalFetch, makeOptions };
-
-function generalFetch(url, options = {}) {
+export const generalFetch = (url, options = {}) => {
     return fetch(url, options).then((res) => res.json());
-}
+};
 
-function makeOptions(method, body = {}) {
+export const makeOptions = (method, body = {}) => {
     return {
         method,
         headers: {
@@ -12,4 +10,4 @@ function makeOptions(method, body = {}) {
         },
         body: JSON.stringify(body),
     };
-}
+};
