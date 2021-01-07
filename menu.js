@@ -53,7 +53,8 @@ const MainMenu = new Phaser.Class({
                 text.visible = false;
                 this.scene.pause();
                 // this.scene.launch("level1");
-                this.scene.launch("ui");
+                // this.scene.launch("ui");
+                this.scene.launch("highScore");
             },
             this
         );
@@ -524,8 +525,6 @@ const Level = new Phaser.Class({
         this.enemyAnim();
 
         if (gameOver) {
-            input.style.display = "block";
-            input.style.position = "absolute";
             let textConfig = {
                 fontSize: "35px",
                 color: "#ff0000",
@@ -547,6 +546,10 @@ const Level = new Phaser.Class({
 
             text.setText(["SCORE: " + this.data.get("score")]);
             scoreText.visible = false;
+
+            // this.scene.pause();
+
+            // setTimeout(this.scene.launch("ui"), 3000);
         }
 
         if (cursors.left.isDown) {
@@ -787,6 +790,23 @@ const Level = new Phaser.Class({
         bug2.anims.play("bug-walk", true);
         bug3.anims.play("bug-walk", true);
     },
+});
+
+const highScore = new Phaser.Class({
+    Extends: Phaser.Scene,
+
+    initialize: (highScore = () => {
+        Phaser.Scene.call(this, { key: "highScore" });
+    }),
+    preload: () => {
+        this.load.html("highscore", "assets/highScore.html");
+    },
+
+    create: () => {
+        element = this.add.dom(400, 600).createFromCache("highscore");
+        element.setPerspective(800);
+    },
+    update: () => {},
 });
 
 let player;
