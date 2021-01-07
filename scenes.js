@@ -187,12 +187,12 @@ const Level = new Phaser.Class({
         //this.add.image(0, 0, 'sky').setOrigin(0,0);
 
         const map = this.make.tilemap({ key: 'map' });
-        const tileset = map.addTilesetImage('space-station', 'tiles');
+        const tileset = map.addTilesetImage('space-station', 'tiles', 16,16, 0,0);
 
-        map.createStaticLayer('sky', tileset, 0, -8);
-        map.createStaticLayer('background', tileset, 0, -8);
-        map.createStaticLayer('keycards', tileset, 0, -8);
-        map.createStaticLayer('tanks', tileset, 0, -8);
+        map.createLayer('sky', tileset, 0, -8);
+        map.createLayer('background', tileset, 0, -8);
+        map.createLayer('keycards', tileset, 0, -8);
+        map.createLayer('tanks', tileset, 0, -8);
 
         robo = this.add.sprite('robo');
         blob = this.add.sprite('blob');
@@ -209,11 +209,11 @@ const Level = new Phaser.Class({
         let hazardCollision_top = this.add.rectangle(424, 120, 560, 32, 0x29d911)
         let hazardCollision_bottom = this.add.rectangle(448, 592, 640, 16, 0x29d911)
         
-        const walls = map.createStaticLayer('walls', tileset, 0, -8);
-        const platforms = map.createStaticLayer('platforms', tileset, 0, -8);
+        const walls = map.createLayer('walls', tileset, 0, -8);
+        const platforms = map.createLayer('platforms', tileset, 0, -8);
         walls.setCollisionByExclusion(-1, true);
         platforms.setCollisionByExclusion(-1, true);
-        map.createStaticLayer('foreground', tileset, 0, -8);
+        map.createLayer('foreground', tileset, 0, -8);
 
         this.physics.world.enable(hazardCollision_top)
         this.physics.world.enable(hazardCollision_bottom)
@@ -295,12 +295,6 @@ const Level = new Phaser.Class({
 
     this.playerMove()
     this.enemyAnim()
-
-            if (gameOver)
-            {
-                return;
-            }
-
     },
 
     
@@ -381,6 +375,44 @@ const Level = new Phaser.Class({
             repeat: -1
         });
     },
+    startColliders(platforms, walls, hazardCollision_top, hazardCollision_bottom) {
+        //  Collide the player and the stars with the platforms
+        this.physics.add.collider(player, platforms);
+        this.physics.add.collider(player, walls);
+        this.physics.add.collider(roboE, platforms);
+        this.physics.add.collider(roboE, walls);
+        this.physics.add.collider(blob1, platforms);
+        this.physics.add.collider(blob1, walls);
+        this.physics.add.collider(blob2, platforms);
+        this.physics.add.collider(blob2, walls);
+        this.physics.add.collider(bug1, platforms);
+        this.physics.add.collider(bug1, walls);
+        this.physics.add.collider(bug2, platforms);
+        this.physics.add.collider(bug2, walls);
+        this.physics.add.collider(bug3, platforms);
+        this.physics.add.collider(bug3, walls);
+
+        this.physics.add.collider(stars, platforms);
+        this.physics.add.collider(stars, walls);
+        this.physics.add.collider(bombs, platforms);
+        this.physics.add.collider(bombs, walls);
+
+
+
+        //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
+        this.physics.add.overlap(player, stars, this.collectStar, null, this);
+
+        this.physics.add.collider(player, bombs, this.hitBomb, null, this);
+        this.physics.add.collider(player, roboE, this.hitBomb, null, this);
+        this.physics.add.collider(player, blob1, this.hitBomb, null, this);
+        this.physics.add.collider(player, blob2, this.hitBomb, null, this);
+        this.physics.add.collider(player, bug1, this.hitBomb, null, this);
+        this.physics.add.collider(player, bug2, this.hitBomb, null, this);
+        this.physics.add.collider(player, bug3, this.hitBomb, null, this);
+
+        this.physics.add.collider(player, hazardCollision_bottom, this.hitBomb, null, this);
+        this.physics.add.collider(player, hazardCollision_top, this.hitBomb, null, this);
+    },
 
     collectStar (player, star)
     {
@@ -410,16 +442,22 @@ const Level = new Phaser.Class({
     },
     hitBomb (player, bomb)
     {
-        this.physics.pause();
-    
-        player.setTint(0xff0000);
-    
-        player.anims.play('die');
-    
         gameOver = true;
+        player.setTint(0xff0000);
+        player.anims.play('die');
+        this.physics.pause();
+        
+        this.time.delayedCall(800, this.playerDeath, [], this);
     },
 
+    
+    playerDeath() {
+        this.scene.pause()
+        this.scene.start('menu') 
+        gameOver = false;  
+    },
     playerMove() {
+    if(!gameOver) {
         if (cursors.left.isDown) 
         {
             player.body.setVelocityX(-160);
@@ -460,7 +498,7 @@ const Level = new Phaser.Class({
             }
             else
             {
-                player.anims.play('jump', true)
+                    player.anims.play('jump', true)
             }
             player.body.setVelocityX(0);
         }
@@ -472,6 +510,7 @@ const Level = new Phaser.Class({
             animationPlayed = false;
             
         }
+    }
     },
     playerCollider (animationKey) {
         switch(animationKey) 
@@ -489,44 +528,7 @@ const Level = new Phaser.Class({
                 break;
         }
     },
-    startColliders(platforms, walls, hazardCollision_top, hazardCollision_bottom) {
-        //  Collide the player and the stars with the platforms
-        this.physics.add.collider(player, platforms);
-        this.physics.add.collider(player, walls);
-        this.physics.add.collider(roboE, platforms);
-        this.physics.add.collider(roboE, walls);
-        this.physics.add.collider(blob1, platforms);
-        this.physics.add.collider(blob1, walls);
-        this.physics.add.collider(blob2, platforms);
-        this.physics.add.collider(blob2, walls);
-        this.physics.add.collider(bug1, platforms);
-        this.physics.add.collider(bug1, walls);
-        this.physics.add.collider(bug2, platforms);
-        this.physics.add.collider(bug2, walls);
-        this.physics.add.collider(bug3, platforms);
-        this.physics.add.collider(bug3, walls);
 
-        this.physics.add.collider(stars, platforms);
-        this.physics.add.collider(stars, walls);
-        this.physics.add.collider(bombs, platforms);
-        this.physics.add.collider(bombs, walls);
-
-
-
-        //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
-        this.physics.add.overlap(player, stars, this.collectStar, null, this);
-
-        this.physics.add.collider(player, bombs, this.hitBomb, null, this);
-        this.physics.add.collider(player, roboE, this.hitBomb, null, this);
-        this.physics.add.collider(player, blob1, this.hitBomb, null, this);
-        this.physics.add.collider(player, blob2, this.hitBomb, null, this);
-        this.physics.add.collider(player, bug1, this.hitBomb, null, this);
-        this.physics.add.collider(player, bug2, this.hitBomb, null, this);
-        this.physics.add.collider(player, bug3, this.hitBomb, null, this);
-
-        this.physics.add.collider(player, hazardCollision_bottom, this.hitBomb, null, this);
-        this.physics.add.collider(player, hazardCollision_top, this.hitBomb, null, this);
-    },
     
     enemyPaths () {
    let enemyPath  = this.add.graphics();
@@ -702,7 +704,7 @@ var config = {
         arcade: 
         {
             gravity: { y: 600 },
-            debug: true
+            debug: false
         }
     }
 };
