@@ -1,3 +1,45 @@
+const URL = "http://localhost:3000/users";
+let button = document.createElement("button");
+const playAgainButton = () => {
+    button.id = "back-button";
+    button.textContent = "PLAY AGAIN";
+
+    return button.addEventListener("click", (e) => {
+        console.log(e);
+    });
+};
+const top10 = () => {
+    let div = document.querySelector(".login");
+    let table = document.createElement("table");
+    let tbody = document.createElement("tbody");
+    playAgainButton();
+
+    table.innerHTML = `<tr>
+            <th scope="col">#</th>
+            <th scope="col">User</th>
+            <th scope="col">Score</th>
+            </tr>
+            </thead>`;
+    generalFetch(URL).then((users) => {
+        i = 0;
+        users.forEach((user) => {
+            i++;
+            tbody.innerHTML += `<tr> 
+                <th>${i}</th>
+                <th>${user.user_name}</th>
+                <th>${user.high_score}</th>
+            </tr>`;
+        });
+    });
+    div.innerHTML = "";
+    table.append(tbody);
+    div.append(table);
+    div.append(button);
+};
+const table = (user) => {
+    let tr = document.createElement("tr");
+};
+
 const generalFetch = (url, options = {}) => {
     return fetch(url, options).then((res) => res.json());
 };
@@ -53,8 +95,8 @@ const MainMenu = new Phaser.Class({
                 text.visible = false;
                 this.scene.pause();
                 // this.scene.launch("level1");
-                // this.scene.launch("ui");
-                this.scene.launch("highScore");
+                this.scene.launch("ui");
+                // this.scene.launch("highScore");
             },
             this
         );
@@ -103,17 +145,14 @@ const UI = new Phaser.Class({
         // Post req to backend to store user name and score
 
         submit.addEventListener("click", (e) => {
-            console.log(input.value);
-
             body = {
                 user_name: input.value,
-                high_score: score,
+                high_score: 80,
             };
 
-            generalFetch(
-                "http://localhost:3000/users",
-                makeOptions("POST", body)
-            ).then(console.log);
+            generalFetch(URL, makeOptions("POST", body)).then((_response) => {
+                top10();
+            });
         });
 
         // element.addListener("click");
@@ -795,18 +834,19 @@ const Level = new Phaser.Class({
 const highScore = new Phaser.Class({
     Extends: Phaser.Scene,
 
-    initialize: (highScore = () => {
+    initialize: function highScore() {
         Phaser.Scene.call(this, { key: "highScore" });
-    }),
-    preload: () => {
+    },
+    preload: function () {
         this.load.html("highscore", "assets/highScore.html");
     },
 
-    create: () => {
-        element = this.add.dom(400, 600).createFromCache("highscore");
-        element.setPerspective(800);
+    create: function () {
+        document.querySelector(".login").innerHTML = "";
+        // element = this.add.dom(400, 600).createFromCache("highscore");
+        // element.setPerspective(800);
     },
-    update: () => {},
+    update: function () {},
 });
 
 let player;
@@ -828,7 +868,7 @@ let config = {
     width: 800,
     height: 600,
     backgroundColor: "#27174a",
-    scene: [MainMenu, Level, UI],
+    scene: [MainMenu, Level, UI, highScore],
     parent: "login-page",
     dom: {
         createContainer: true,
