@@ -147,7 +147,7 @@ const UI = new Phaser.Class({
         submit.addEventListener("click", (e) => {
             body = {
                 user_name: input.value,
-                high_score: 80,
+                high_score: score,
             };
 
             generalFetch(URL, makeOptions("POST", body)).then((_response) => {
