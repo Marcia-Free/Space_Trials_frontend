@@ -13,17 +13,33 @@ const MainMenu = new Phaser.Class({
 
     preload: function ()
     {
+        this.load.audio('landing_music', 'assets/sounds/Cactusdude - 11pm.mp3');
+
         this.load.image("button-bg", "assets/button-bg.png");
         this.load.image("button-text", "assets/button-text.png");
+        this.load.image("title_screen", "assets/title_screen.png");
+        
     },
 
     create: function ()
     {
+        this.title_music = this.sound.add('landing_music', { volume: 0.3 });
+        this.title_music.setLoop(true);
+        this.title_music.play();
+
+        this.add.image(0, 0, 'title_screen').setOrigin(0,0);
         playButton = this.add.image(
             this.game.config.width / 2,
             this.game.config.height / 2,
             "button-bg"
         );
+
+        const instruction = this.add.text(384 / 2, 320 * 0.37, 'Move with arrow keys\nJump with UP key\nShoot with SPACEBAR', {
+           // fontFamily: 'prstart', fontSize: 12, color: '#ffffff', align: 'center'
+          })
+            .setOrigin(0.5);
+          instruction.setLineSpacing(10);
+
         // .setDepth(1);
 
         let text = this.add.image(
@@ -44,6 +60,7 @@ const MainMenu = new Phaser.Class({
             function () {
                 playButton.visible = false;
                 text.visible = false;
+                this.title_music.stop();
                     this.scene.pause();
                     this.scene.launch('level1');
                 //console.log(this);
@@ -167,16 +184,20 @@ const Level = new Phaser.Class({
 
     preload: function ()
     {
-        this.load.audio('bgm', 'assets/sounds/Cactusdude - 11pm.mp3');
-        this.load.image('star', 'assets/star.png');
-        this.load.image('bomb', 'assets/bomb.png');
+        this.load.audio('bgm', 'assets/sounds/bgm_loop.mp3');
+        this.load.audio('blast', 'assets/sounds/blast.mp3');
+        this.load.audio('fire', 'assets/sounds/fire2.mp3');
+        this.load.audio('pick_up', 'assets/sounds/pick_up.mp3');
+        this.load.audio('die', 'assets/sounds/my-leg.mp3');
         
         this.load.spritesheet('char', 'assets/spritesheets/entities/player_spritesheet-recolor.png', { frameWidth: 56, frameHeight: 50 });
         this.load.spritesheet('robo', 'assets/spritesheets/entities/bi-pedal_spritesheet.png', { frameWidth: 72, frameHeight: 79 });
         this.load.spritesheet('blob', 'assets/spritesheets/entities/blob_spritesheet.png', { frameWidth: 64, frameHeight: 47 });
         this.load.spritesheet('bug', 'assets/spritesheets/entities/bug_spritesheet.png', { frameWidth: 70, frameHeight: 41 });
+        this.load.spritesheet('rakshan', 'assets/spritesheets/entities/rakshan_spritesheet.png', { frameWidth: 70, frameHeight: 41 });
         this.load.spritesheet('enemy-die', 'assets/spritesheets/entities/death_spritesheet.png', { frameWidth: 48, frameHeight: 48 });
 
+        this.load.image('bomb', 'assets/bomb.png');
         this.load.spritesheet('keycard', 'assets/spritesheets/objects/keycards.png', { frameWidth: 16, frameHeight: 16, endFrame: 47 });
         this.load.spritesheet('laser', 'assets/spritesheets/objects/electro barrier.png', { frameWidth: 48, frameHeight: 16, endFrame: 5 });
         this.load.spritesheet('bullet', 'assets/spritesheets/objects/bullet_spritesheet.png', { frameWidth: 16, frameHeight: 10});
@@ -189,7 +210,12 @@ const Level = new Phaser.Class({
 
     create: function ()
     {
-        //this.add.image(0, 0, 'sky').setOrigin(0,0);
+        
+        this.blastSFX = this.sound.add('blast');
+        this.pickUpSFX = this.sound.add('pick_up', { volume: 0.3 });
+        this.fireSFX = this.sound.add('fire', { volume: 0.1 });
+        this.dieSFX = this.sound.add('die', { volume: 1.5 });
+
         this.bgMusic = this.sound.add('bgm', { volume: 0.3 });
         this.bgMusic.setLoop(true);
         this.bgMusic.play();
@@ -200,16 +226,17 @@ const Level = new Phaser.Class({
         map.createLayer('sky', tileset, 0, -8);
         map.createLayer('background', tileset, 0, -8);
         map.createLayer('keycards', tileset, 0, -8);
-        map.createLayer('tanks', tileset, 0, -8);
 
         robo = this.add.sprite('robo');
         blob = this.add.sprite('blob');
         bug = this.add.sprite('bug');
+        rakshan = this.add.sprite('rakshan');
         death = this.add.sprite('enemy-die');
 
         player = this.physics.add.sprite(40, 570, 'char');
         player.body.setSize(20, 40, 28)
         player.body.setOffset(20, 10)
+        player.setScale(.80)
         player.setCollideWorldBounds(true);
 
         //---------------------------------------------------Hazard Setup
@@ -227,14 +254,13 @@ const Level = new Phaser.Class({
         hazardCollision_bottom.body.moves = false
         hazardCollision_top.body.moves = false
 
-        key = this.physics.add.sprite(275, 380, 'keycard');
-        key.body.moves = false
+        // key = this.physics.add.sprite(275, 380, 'keycard');
+        // key.body.moves = false
 
         impact = this.add.sprite('impact');
         bullet = this.physics.add.sprite('bullet');
         bullet.body.setSize(10, 5, 0)
         bullet.body.setOffset(5, 2)
-        bullet.setCollideWorldBounds(true);
 
         this.createLasers()
         this.time.addEvent({ delay: 3000, callback: this.laserSwitch, callbackScope: this, loop: true });
@@ -269,16 +295,18 @@ const Level = new Phaser.Class({
         cursors = this.input.keyboard.createCursorKeys();
 
         //  Some stars to collect, 12 in total, evenly spaced 70 pixels apart along the x axis
-        stars = this.physics.add.group({
-            key: 'star',
+        cards = this.physics.add.group({
+            key: 'keycard',
             repeat: 4,
-            setXY: { x: 12, y: 0, stepX: 100 }
+            setXY: { x: 12, y: 0, stepX: 100 },
+            
         });
 
-        stars.children.iterate(function (child) {
+        cards.children.iterate(function (child) {
 
             //  Give each star a slightly different bounce
             child.setBounceY(Phaser.Math.FloatBetween(0.1, 0.4));
+            child.anims.play('key-rotate', true)
 
         });
 
@@ -287,11 +315,12 @@ const Level = new Phaser.Class({
         //  The score
         scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '24px', fill: '#000' });
 
-    this.createColliders(platforms, walls, hazardCollision_bottom, hazardCollision_bottom)
+    this.createColliders(platforms, walls, hazardCollision_top, hazardCollision_bottom)
         
 
-       //this.cameras.main.zoom = 1.5;
-       //this.cameras.main.startFollow(player);
+       this.cameras.main.zoom = 2.0;
+       this.cameras.main.startFollow(player);
+       //this.cameras.main.startFollow(player, true, 0.09, 0, 0, 0);
        this.cameras.main.setBounds(0, 0, 800, 600);
 
         this.input.once('pointerdown', function () {
@@ -303,7 +332,6 @@ const Level = new Phaser.Class({
 
     update: function ()
     {
-        key.anims.play('key-rotate', true)
 
         laser1.anims.play('laser1', true)
         laser2.anims.play('laser1', true)
@@ -381,6 +409,12 @@ const Level = new Phaser.Class({
         this.anims.create({
             key: 'bug-walk',
             frames: this.anims.generateFrameNumbers('bug', { start: 0, end: 5 }),
+            frameRate: 10,
+            repeat: -1
+        });
+        this.anims.create({
+            key: 'rakshan-walk',
+            frames: this.anims.generateFrameNumbers('rakshan', { start: 0, end: 5 }),
             frameRate: 10,
             repeat: -1
         });
@@ -537,20 +571,19 @@ const Level = new Phaser.Class({
         this.physics.add.collider(bug3, platforms);
         this.physics.add.collider(bug3, walls);
 
-        this.physics.add.collider(stars, platforms);
-        this.physics.add.collider(stars, walls);
+        this.physics.add.collider(cards, platforms);
+        this.physics.add.collider(cards, walls);
         this.physics.add.collider(bombs, platforms);
         this.physics.add.collider(bombs, walls);
-        // this.physics.add.collider(bullet, platforms);
-        // this.physics.add.collider(bullet, walls);
 
         this.physics.add.collider(walls, bullet, this.resetBullet, null, this);
         this.physics.add.collider(platforms, bullet, this.resetBullet, null, this);
+        this.physics.add.collider(bombs, bullet, this.resetBullet, null, this);
 
 
 
         //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
-        this.physics.add.overlap(player, stars, this.collectStar, null, this);
+        this.physics.add.overlap(player, cards, this.collectStar, null, this);
 
         this.physics.add.collider(player, bombs, this.hitBomb, null, this);
         this.physics.add.collider(player, roboE, this.hitBomb, null, this);
@@ -571,20 +604,22 @@ const Level = new Phaser.Class({
         this.physics.add.collider(roboE, bullet, this.enemyHit, null, this);
     },
 
-    collectStar (player, star)
+    collectStar (player, keycard)
     {
-        star.disableBody(true, true);
+        this.pickUpSFX.play();
+        keycard.disableBody(true, true);
 
         //  Add and update the score
         score += 10;
         scoreText.setText('Score: ' + score);
 
-        if (stars.countActive(true) === 0)
+        if (cards.countActive(true) === 0)
         {
             //  A new batch of stars to collect
-            stars.children.iterate(function (child) {
+            cards.children.iterate(function (child) {
 
                 child.enableBody(true, child.x, 0, true, true);
+                child.anims.play('key-rotate', true)
 
             });
 
@@ -602,6 +637,7 @@ const Level = new Phaser.Class({
         gameOver = true;
         player.setTint(0xff0000);
         player.body.setEnable(false);
+        this.dieSFX.play();
         player.anims.play('die');
         this.physics.pause();
         
@@ -610,6 +646,7 @@ const Level = new Phaser.Class({
 
 
     playerDeath() {
+        this.bgMusic.stop();
         this.scene.stop()
         this.scene.start('menu') 
         gameOver = false;  
@@ -779,7 +816,7 @@ bug2.startFollow
 bug3Path = this.add.path(776, 554);
 bug3Path.splineTo([ 639, 535, 552, 560, 451, 546]);
 
-bug3 =  this.add.follower(bug3Path, 0, 0, 'bug')
+bug3 =  this.add.follower(bug3Path, 0, 0, 'rakshan')
 this.physics.world.enable(bug3)
 bug3.setScale(.75)
 bug3.body.setAllowGravity(false)
@@ -826,7 +863,7 @@ bug3.startFollow
         } 
         if(bug3.isFollowing()) 
         {
-            bug3.anims.play('bug-walk' ,true)
+            bug3.anims.play('rakshan-walk' ,true)
         }
 
 
@@ -879,6 +916,7 @@ bug3.startFollow
         bullet.setVisible(true);
         
         bullet.anims.play('shoot', true)
+        this.fireSFX.play();
        
         if (lastKeyPress === 'left' && cursors.down.isDown)
         {
@@ -931,6 +969,7 @@ bug3.startFollow
         enemy.clearTint();
 
        enemy.play('dieE', false);
+       this.blastSFX.play();
        
        enemy.body.enable = false;
 
@@ -944,7 +983,7 @@ bug3.startFollow
 });
 
 let player;
-let stars;
+let cards;
 let bombs;
 let cursors;
 let score = 0;
@@ -971,7 +1010,7 @@ var config = {
         arcade: 
         {
             gravity: { y: 600 },
-            debug: false
+            debug: true
         }
     }
 };
