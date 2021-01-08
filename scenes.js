@@ -375,7 +375,6 @@ const Level = new Phaser.Class({
             //  Give each star a slightly different bounce
             child.setBounceY(Phaser.Math.FloatBetween(0.1, 0.4));
             child.anims.play('key-rotate', true)
-
         });
 
         bombs = this.physics.add.group();
@@ -739,7 +738,7 @@ const Level = new Phaser.Class({
     playerDeath() {
         this.bgMusic.stop();
         this.scene.stop()
-        this.scene.start('menu') 
+        this.scene.start('ui') 
         gameOver = false;  
     },
     playerMove() {
@@ -1113,6 +1112,7 @@ let playButton;
 let bullet;
 let laserPower1 = true;
 let laserPower2 = true;
+
 
 let config = {
     type: Phaser.AUTO,
