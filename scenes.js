@@ -1,4 +1,5 @@
 const URL = "http://localhost:3000/users";
+
 let button = document.createElement("button");
 const playAgainButton = () => {
     button.id = "back-button";
@@ -6,6 +7,7 @@ const playAgainButton = () => {
 
     return button.addEventListener("click", (e) => {
         console.log(e);
+        this.scene.launch("level1");
     });
 };
 const top10 = () => {
@@ -94,8 +96,8 @@ const MainMenu = new Phaser.Class({
                 playButton.visible = false;
                 text.visible = false;
                 this.scene.pause();
-                // this.scene.launch("level1");
-                this.scene.launch("ui");
+                this.scene.launch("level1");
+                // this.scene.launch("ui");
                 // this.scene.launch("highScore");
             },
             this
@@ -258,6 +260,8 @@ const UI = new Phaser.Class({
 
             text.setText(["SCORE: " + this.data.get("score")]);
             scoreText.visible = false;
+
+            this.scene.launch("ui");
         }
 
         //  Add and update the score
