@@ -62,9 +62,10 @@ const MainMenu = new Phaser.Class({
     preload: function () {
         this.load.audio("landing_music", "assets/sounds/Cactusdude - 11pm.mp3");
 
-        this.load.image("button-bg", "assets/button-bg.png");
-        this.load.image("button-text", "assets/button-text.png");
+        // this.load.image("button-bg", "assets/button-bg.png");
+        // this.load.image("button-text", "assets/button-text.png");
         this.load.image("title_screen", "assets/title_screen.png");
+        this.load.image("button-bg", "assets/play_game_button.png");
     },
 
     create: function () {
@@ -103,7 +104,7 @@ const MainMenu = new Phaser.Class({
         let container = this.add.container(0, 0).setDepth(1);
 
         container.add(playButton);
-        container.add(text);
+        // container.add(text);
 
         playButton.setInteractive();
 
@@ -116,12 +117,10 @@ const MainMenu = new Phaser.Class({
                 this.cameras.main.fadeOut(1000);
                 this.title_music.stop();
 
-                setTimeout(() => 
-                {
-                this.scene.pause();
-                this.scene.launch("level1");
-                },1000)
-
+                setTimeout(() => {
+                    this.scene.pause();
+                    this.scene.launch("level1");
+                }, 1000);
             },
             this
         );
@@ -318,12 +317,13 @@ const Level = new Phaser.Class({
         player.body.setOffset(20, 10);
         player.setScale(0.8);
         player.setCollideWorldBounds(true);
-        
 
         //---------------------------------------------------Hazard Setup
         let hazardCollision_top = this.add.rectangle(
-            424,120,
-            560,25,
+            424,
+            120,
+            560,
+            25,
             0x29d911
         );
         let hazardCollision_bottom = this.add.rectangle(
@@ -350,7 +350,7 @@ const Level = new Phaser.Class({
         bullet.body.setSize(10, 5, 0);
         bullet.body.setOffset(5, 2);
         bullet.active = false;
-        bullet.body.reset()
+        bullet.body.reset();
 
         this.createLasers();
         this.time.addEvent({
@@ -384,9 +384,8 @@ const Level = new Phaser.Class({
         cursors = this.input.keyboard.createCursorKeys();
         eKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
 
-
-        cards = this.physics.add.group()
-        this.generateCards()
+        cards = this.physics.add.group();
+        this.generateCards();
 
         bombs = this.physics.add.group();
 
@@ -404,7 +403,7 @@ const Level = new Phaser.Class({
         );
 
         this.cameras.main.fadeIn(1000);
-        this.cameras.main.setZoom(2.0)
+        this.cameras.main.setZoom(2.0);
         this.cameras.main.startFollow(player);
         //this.cameras.main.startFollow(player, true, 0.09, 0, 0, 0);
         this.cameras.main.setBounds(0, 0, 800, 600);
@@ -703,7 +702,6 @@ const Level = new Phaser.Class({
         hazardCollision_top,
         hazardCollision_bottom
     ) {
-
         //  Checks to see if the player overlaps with any of the stars, if he does call the collectKey function
         this.physics.add.overlap(player, cards, this.collectKey, null, this);
         //  Collide the player and the stars with the platforms
@@ -759,8 +757,6 @@ const Level = new Phaser.Class({
         this.physics.add.collider(bug3, bullet, this.enemyHit, null, this);
         this.physics.add.collider(roboE, bullet, this.enemyHit, null, this);
 
-
-
         this.physics.add.collider(player, bombs, this.takeDamage, null, this);
         this.physics.add.collider(player, roboE, this.takeDamage, null, this);
         this.physics.add.collider(player, blob1, this.takeDamage, null, this);
@@ -770,36 +766,34 @@ const Level = new Phaser.Class({
         this.physics.add.collider(player, bug3, this.takeDamage, null, this);
     },
     generateCards() {
-        const cardData = 
-        [
-            { x:175, y:530 },
-            { x:784, y:573 },
-            { x:248, y:380 },
-            { x:384, y:444 },
-            { x:268, y:475 },
-            { x:23, y:330 },
-            { x:215, y:90 },
-            { x:264, y:90 },
-            { x:311, y:90 },
-            { x:113, y:50 },
-            { x:111, y:155 },
-            { x:158, y:170 },
-            { x:743, y:180 },
-            { x:558, y:360 },
-            { x:670, y:430 },
-            { x:545, y:490 },
-            { x:17, y:88 }
+        const cardData = [
+            { x: 175, y: 530 },
+            { x: 784, y: 573 },
+            { x: 248, y: 380 },
+            { x: 384, y: 444 },
+            { x: 268, y: 475 },
+            { x: 23, y: 330 },
+            { x: 215, y: 90 },
+            { x: 264, y: 90 },
+            { x: 311, y: 90 },
+            { x: 113, y: 50 },
+            { x: 111, y: 155 },
+            { x: 158, y: 170 },
+            { x: 743, y: 180 },
+            { x: 558, y: 360 },
+            { x: 670, y: 430 },
+            { x: 545, y: 490 },
+            { x: 17, y: 88 },
         ];
 
         for (let i = 0; i < cardData.length; i++) {
-            let card = cards.create(cardData[i].x, cardData[i].y, 'keycard');
+            let card = cards.create(cardData[i].x, cardData[i].y, "keycard");
         }
-
 
         cards.children.iterate(function (child) {
             //  Give each star a slightly different bounce
             child.setBounceY(Phaser.Math.FloatBetween(0.1, 0.4));
-            child.anims.play('key-rotate-y', true)
+            child.anims.play("key-rotate-y", true);
         });
     },
 
@@ -862,20 +856,19 @@ const Level = new Phaser.Class({
     },
 
     playerDeath() {
-        this.cameras.main.fadeOut(1000)
+        this.cameras.main.fadeOut(1000);
         this.bgMusic.stop();
 
-        setTimeout(() => 
-        {
-        this.scene.stop()
-        this.scene.start('ui') 
-        gameOver = false; 
-        }, 2000) 
+        setTimeout(() => {
+            this.scene.stop();
+            this.scene.start("ui");
+            gameOver = false;
+        }, 2000);
     },
     playerMove() {
         if (!gameOver) {
             if (eKey.isDown && bullet.active === false) {
-               this.fireBullet(player.x, player.y);
+                this.fireBullet(player.x, player.y);
             }
 
             if (cursors.left.isDown) {
@@ -1149,7 +1142,6 @@ const Level = new Phaser.Class({
     },
 
     enemyHit(enemy, bullet) {
-
         enemy.pauseFollow();
         enemy.setTint(0xff0000);
         enemy.clearTint();
@@ -1204,7 +1196,6 @@ let playButton;
 let bullet;
 let laserPower1 = true;
 let laserPower2 = true;
-
 
 let config = {
     type: Phaser.AUTO,
