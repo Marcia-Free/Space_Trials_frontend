@@ -1,20 +1,14 @@
 const URL = "http://localhost:3000/users";
 
 let button = document.createElement("button");
-const playAgainButton = () => {
+
+const top10 = () => {
     button.id = "back-button";
     button.textContent = "PLAY AGAIN";
 
-    return button.addEventListener("click", (e) => {
-        console.log(e);
-        this.scene.launch("level1");
-    });
-};
-const top10 = () => {
     let div = document.querySelector(".login");
     let table = document.createElement("table");
     let tbody = document.createElement("tbody");
-    playAgainButton();
 
     table.innerHTML = `<tr>
             <th scope="col">#</th>
@@ -158,6 +152,11 @@ const UI = new Phaser.Class({
                 high_score: score,
             };
 
+            button.addEventListener("click", (e) => {
+                console.log(this);
+                this.scene.start("menu");
+            });
+
             generalFetch(URL, makeOptions("POST", body)).then((_response) => {
                 top10();
             });
@@ -198,7 +197,7 @@ const UI = new Phaser.Class({
             text.setText(["SCORE: " + this.data.get("score")]);
             scoreText.visible = false;
 
-            this.scene.launch("highscore");
+            this.scene.launch("");
         }
 
         //  Add and update the score
@@ -829,7 +828,7 @@ const Level = new Phaser.Class({
     playerDeath() {
         this.bgMusic.stop();
         this.scene.stop();
-        this.scene.start("menu");
+        this.scene.start("ui");
         gameOver = false;
     },
     playerMove() {
