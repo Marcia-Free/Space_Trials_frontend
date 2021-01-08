@@ -84,7 +84,7 @@ const MainMenu = new Phaser.Class({
             .text(
                 384 / 2,
                 320 * 0.37,
-                "Move with arrow keys\nJump with UP key\nShoot with SPACEBAR",
+                "Move with arrow keys\nCrouch with Down Arrow\nJump with Spacebar\nShoot with E key",
                 {
                     // fontFamily: 'prstart', fontSize: 12, color: '#ffffff', align: 'center'
                 }
@@ -113,11 +113,15 @@ const MainMenu = new Phaser.Class({
                 playButton.visible = false;
                 text.visible = false;
 
+                this.cameras.main.fadeOut(1000);
                 this.title_music.stop();
+
+                setTimeout(() => 
+                {
                 this.scene.pause();
                 this.scene.launch("level1");
-                // this.scene.launch("ui");
-                // this.scene.launch("highScore");
+                },1000)
+
             },
             this
         );
@@ -326,7 +330,6 @@ const Level = new Phaser.Class({
 
         map.createLayer("sky", tileset, 0, -8);
         map.createLayer("background", tileset, 0, -8);
-        map.createLayer("keycards", tileset, 0, -8);
 
         robo = this.add.sprite("robo");
         blob = this.add.sprite("blob");
@@ -339,13 +342,12 @@ const Level = new Phaser.Class({
         player.body.setOffset(20, 10);
         player.setScale(0.8);
         player.setCollideWorldBounds(true);
+        
 
         //---------------------------------------------------Hazard Setup
         let hazardCollision_top = this.add.rectangle(
-            424,
-            120,
-            560,
-            32,
+            424,120,
+            560,25,
             0x29d911
         );
         let hazardCollision_bottom = this.add.rectangle(
@@ -367,14 +369,12 @@ const Level = new Phaser.Class({
         hazardCollision_bottom.body.moves = false;
         hazardCollision_top.body.moves = false;
 
-        // key = this.physics.add.sprite(275, 380, 'keycard');
-        // key.body.moves = false
-
         impact = this.add.sprite("impact");
         bullet = this.physics.add.sprite("bullet");
         bullet.body.setSize(10, 5, 0);
         bullet.body.setOffset(5, 2);
         bullet.active = false;
+        bullet.body.reset()
 
         this.createLasers();
         this.time.addEvent({
@@ -406,19 +406,11 @@ const Level = new Phaser.Class({
 
         //  Input Events
         cursors = this.input.keyboard.createCursorKeys();
+        eKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
 
-        //  Some stars to collect, 12 in total, evenly spaced 70 pixels apart along the x axis
-        cards = this.physics.add.group({
-            key: "keycard",
-            repeat: 4,
-            setXY: { x: 12, y: 0, stepX: 100 },
-        });
 
-        cards.children.iterate(function (child) {
-            //  Give each star a slightly different bounce
-            child.setBounceY(Phaser.Math.FloatBetween(0.1, 0.4));
-            child.anims.play('key-rotate', true)
-        });
+        cards = this.physics.add.group()
+        this.generateCards()
 
         bombs = this.physics.add.group();
 
@@ -435,18 +427,19 @@ const Level = new Phaser.Class({
             hazardCollision_bottom
         );
 
-        this.cameras.main.zoom = 2.0;
+        this.cameras.main.fadeIn(1000);
+        this.cameras.main.setZoom(2.0)
         this.cameras.main.startFollow(player);
         //this.cameras.main.startFollow(player, true, 0.09, 0, 0, 0);
         this.cameras.main.setBounds(0, 0, 800, 600);
 
-        this.input.once(
-            "pointerdown",
-            function () {
-                this.scene.resume("menu");
-            },
-            this
-        );
+        // this.input.once(
+        //     "pointerdown",
+        //     function () {
+        //         this.scene.resume("menu");
+        //     },
+        //     this
+        // );
     },
 
     update: function () {
@@ -579,10 +572,19 @@ const Level = new Phaser.Class({
         });
 
         this.anims.create({
-            key: "key-rotate",
+            key: "key-rotate-g",
             frames: this.anims.generateFrameNumbers("keycard", {
                 start: 8,
                 end: 15,
+            }),
+            frameRate: 5,
+            repeat: -1,
+        });
+        this.anims.create({
+            key: "key-rotate-y",
+            frames: this.anims.generateFrameNumbers("keycard", {
+                start: 16,
+                end: 23,
             }),
             frameRate: 5,
             repeat: -1,
@@ -654,7 +656,7 @@ const Level = new Phaser.Class({
         collider = this.physics.add.collider(
             player,
             name,
-            this.hitBomb,
+            this.takeDamage,
             null,
             this
         );
@@ -725,6 +727,9 @@ const Level = new Phaser.Class({
         hazardCollision_top,
         hazardCollision_bottom
     ) {
+
+        //  Checks to see if the player overlaps with any of the stars, if he does call the collectKey function
+        this.physics.add.overlap(player, cards, this.collectKey, null, this);
         //  Collide the player and the stars with the platforms
         this.physics.add.collider(player, platforms);
         this.physics.add.collider(player, walls);
@@ -759,14 +764,14 @@ const Level = new Phaser.Class({
         this.physics.add.collider(
             player,
             hazardCollision_bottom,
-            this.hitBomb,
+            this.takeDamage,
             null,
             this
         );
         this.physics.add.collider(
             player,
             hazardCollision_top,
-            this.hitBomb,
+            this.takeDamage,
             null,
             this
         );
@@ -778,19 +783,51 @@ const Level = new Phaser.Class({
         this.physics.add.collider(bug3, bullet, this.enemyHit, null, this);
         this.physics.add.collider(roboE, bullet, this.enemyHit, null, this);
 
-        //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
-        this.physics.add.overlap(player, cards, this.collectStar, null, this);
 
-        this.physics.add.collider(player, bombs, this.hitBomb, null, this);
-        this.physics.add.collider(player, roboE, this.hitBomb, null, this);
-        this.physics.add.collider(player, blob1, this.hitBomb, null, this);
-        this.physics.add.collider(player, blob2, this.hitBomb, null, this);
-        this.physics.add.collider(player, bug1, this.hitBomb, null, this);
-        this.physics.add.collider(player, bug2, this.hitBomb, null, this);
-        this.physics.add.collider(player, bug3, this.hitBomb, null, this);
+
+        this.physics.add.collider(player, bombs, this.takeDamage, null, this);
+        this.physics.add.collider(player, roboE, this.takeDamage, null, this);
+        this.physics.add.collider(player, blob1, this.takeDamage, null, this);
+        this.physics.add.collider(player, blob2, this.takeDamage, null, this);
+        this.physics.add.collider(player, bug1, this.takeDamage, null, this);
+        this.physics.add.collider(player, bug2, this.takeDamage, null, this);
+        this.physics.add.collider(player, bug3, this.takeDamage, null, this);
+    },
+    generateCards() {
+        const cardData = 
+        [
+            { x:175, y:530 },
+            { x:784, y:573 },
+            { x:248, y:380 },
+            { x:384, y:444 },
+            { x:268, y:475 },
+            { x:23, y:330 },
+            { x:215, y:90 },
+            { x:264, y:90 },
+            { x:311, y:90 },
+            { x:113, y:50 },
+            { x:111, y:155 },
+            { x:158, y:170 },
+            { x:743, y:180 },
+            { x:558, y:360 },
+            { x:670, y:430 },
+            { x:545, y:490 },
+            { x:17, y:88 }
+        ];
+
+        for (let i = 0; i < cardData.length; i++) {
+            let card = cards.create(cardData[i].x, cardData[i].y, 'keycard');
+        }
+
+
+        cards.children.iterate(function (child) {
+            //  Give each star a slightly different bounce
+            child.setBounceY(Phaser.Math.FloatBetween(0.1, 0.4));
+            child.anims.play('key-rotate-y', true)
+        });
     },
 
-    collectStar(player, keycard) {
+    collectKey(player, keycard) {
         this.pickUpSFX.play();
         keycard.disableBody(true, true);
 
@@ -801,7 +838,7 @@ const Level = new Phaser.Class({
         if (cards.countActive(true) === 0) {
             //  A new batch of stars to collect
             cards.children.iterate(function (child) {
-                child.enableBody(true, child.x, 0, true, true);
+                child.enableBody(true, child.x, child.y, true, true);
                 child.anims.play("key-rotate", true);
             });
 
@@ -816,15 +853,14 @@ const Level = new Phaser.Class({
             bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
         }
     },
-    hitBomb(player, bomb) {
+    takeDamage(player, bomb) {
         gameOver = true;
         player.setTint(0xff0000);
         player.body.setEnable(false);
         this.dieSFX.play();
         player.anims.play("die");
         this.physics.pause();
-
-        this.time.delayedCall(800, this.playerDeath, [], this);
+        this.time.delayedCall(1000, this.playerDeath, [], this);
 
         //       let textConfig = {
         //                 fontSize: "35px",
@@ -850,15 +886,20 @@ const Level = new Phaser.Class({
     },
 
     playerDeath() {
+        this.cameras.main.fadeOut(1000)
         this.bgMusic.stop();
+
+        setTimeout(() => 
+        {
         this.scene.stop()
         this.scene.start('ui') 
-        gameOver = false;  
+        gameOver = false; 
+        }, 2000) 
     },
     playerMove() {
         if (!gameOver) {
-            if (cursors.up.isDown && bullet.active === false) {
-                this.fireBullet(player.x, player.y);
+            if (eKey.isDown && bullet.active === false) {
+               this.fireBullet(player.x, player.y);
             }
 
             if (cursors.left.isDown) {
@@ -1091,9 +1132,6 @@ const Level = new Phaser.Class({
     },
 
     fireBullet(x, y) {
-        // setTimeout(() => {
-        // }, 5000)
-
         bullet.body.reset(x, y);
         bullet.body.setAllowGravity(false);
         bullet.setActive(true);
@@ -1128,16 +1166,13 @@ const Level = new Phaser.Class({
         bullet.anims.play("impactB", false);
 
         setTimeout(() => {
-            bullet.body.reset(player.x, player.y);
+            bullet.body.reset(player.body.x, player.body.y);
             bullet.setActive(false);
             bullet.setVisible(false);
         }, 2000);
     },
 
     enemyHit(enemy, bullet) {
-        //    bullet.body.reset(player.x, player.y);
-        //    bullet.setActive(false);
-        //    bullet.setVisible(false);
 
         enemy.pauseFollow();
         enemy.setTint(0xff0000);
@@ -1147,6 +1182,9 @@ const Level = new Phaser.Class({
         this.blastSFX.play();
 
         enemy.body.enable = false;
+
+        score += 10;
+        scoreText.setText("Score: " + score);
 
         setTimeout(() => {
             enemy.setActive(false);
@@ -1177,6 +1215,7 @@ let player;
 let cards;
 let bombs;
 let cursors;
+let eKey;
 let score = 0;
 let gameOver = false;
 let scoreText;
