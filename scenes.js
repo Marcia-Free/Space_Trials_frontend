@@ -8,7 +8,6 @@ const MainMenu = new Phaser.Class({
     {
         Phaser.Scene.call(this, { key: 'menu' });
 
-        this.pic;
     },
 
     preload: function ()
