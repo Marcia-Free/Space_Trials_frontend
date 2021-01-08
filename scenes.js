@@ -63,9 +63,10 @@ const MainMenu = new Phaser.Class({
         this.load.audio("landing_music", "assets/sounds/Cactusdude - 11pm.mp3");
 
         // this.load.image("button-bg", "assets/button-bg.png");
-        // this.load.image("button-text", "assets/button-text.png");
-        this.load.image("title_screen", "assets/title_screen.png");
-        this.load.image("button-bg", "assets/play_game_button.png");
+        this.load.image("button-text", "assets/play_game_button-test.png");
+        this.load.image("title_screen", "assets/title_screen-darker.png");
+        this.load.image("button-bg", "assets/play_game_button-test.png");
+        this.loadFont("pixel", "assets/fonts/PixeloidMono.ttf");
     },
 
     create: function () {
@@ -75,23 +76,42 @@ const MainMenu = new Phaser.Class({
 
         this.add.image(0, 0, "title_screen").setOrigin(0, 0);
 
+        
+
         playButton = this.add.image(
             this.game.config.width / 2,
             this.game.config.height / 2,
             "button-bg"
         );
+        playButton.setScale(.75);
 
         const instruction = this.add
             .text(
-                384 / 2,
-                320 * 0.37,
+                384 / 3.4,
+                320 * 1.7,
                 "Move with arrow keys\nCrouch with Down Arrow\nJump with Spacebar\nShoot with E key",
                 {
-                    // fontFamily: 'prstart', fontSize: 12, color: '#ffffff', align: 'center'
+                    fontFamily: 'pixel', fontSize: 15, color: '#ffffff', align: 'left'
                 }
             )
             .setOrigin(0.5);
         instruction.setLineSpacing(10);
+
+        const Title = this.add.text(
+            this.game.config.width / 7,
+            this.game.config.height / 6,
+            'SPACE TRIALS', {
+            fontFamily: 'pixel', fontSize: 75, color: '#ffd000', align: 'center'
+          })
+
+          this.tweens.add({
+            targets: Title,
+            alpha: { from: 1, to: 0.5 },
+            ease: 'Sine.InOut',
+            duration: 1000,
+            repeat: -1,
+            yoyo: true
+          });
 
         // .setDepth(1);
 
@@ -100,6 +120,7 @@ const MainMenu = new Phaser.Class({
             this.game.config.height / 2,
             "button-text"
         );
+        text.setScale(.75);
 
         let container = this.add.container(0, 0).setDepth(1);
 
@@ -127,6 +148,16 @@ const MainMenu = new Phaser.Class({
     },
 
     update: function () {},
+
+    loadFont(name, url) {
+        let newFont = new FontFace(name, `url(${url})`);
+        newFont.load().then(function (loaded) {
+            document.fonts.add(loaded);
+        }).catch(function (error) {
+            return error;
+        });
+    }
+
 });
 
 const UI = new Phaser.Class({
@@ -194,7 +225,7 @@ const UI = new Phaser.Class({
             let text = this.add.text(player.x + 30, player.y + 30, "", {
                 fontSize: "35px",
                 fill: "#00ff00",
-                fontFamily: "Arial",
+                fontFamily: "prstart",
             });
 
             text.setText(["SCORE: " + this.data.get("score")]);
