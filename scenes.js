@@ -216,7 +216,7 @@ const Level = new Phaser.Class({
         this.fireSFX = this.sound.add('fire', { volume: 0.1 });
         this.dieSFX = this.sound.add('die', { volume: 1.5 });
 
-        this.bgMusic = this.sound.add('bgm', { volume: 0.3 });
+        this.bgMusic = this.sound.add('bgm', { volume: 0.1 });
         this.bgMusic.setLoop(true);
         this.bgMusic.play();
 
@@ -261,6 +261,7 @@ const Level = new Phaser.Class({
         bullet = this.physics.add.sprite('bullet');
         bullet.body.setSize(10, 5, 0)
         bullet.body.setOffset(5, 2)
+        bullet.active = false
 
         this.createLasers()
         this.time.addEvent({ delay: 3000, callback: this.laserSwitch, callbackScope: this, loop: true });
@@ -654,7 +655,7 @@ const Level = new Phaser.Class({
     playerMove() {
     if(!gameOver) {
 
-        if(cursors.up.isDown) 
+        if(cursors.up.isDown && bullet.active === false) 
         {
             this.fireBullet(player.x, player.y)
         }
@@ -943,6 +944,9 @@ bug3.startFollow
             bullet.flipX = false;
             bullet.setVelocityX(500);
         }
+        setTimeout(() => {
+            bullet.setActive(false);
+        },2000)
     
     },
 
@@ -954,7 +958,7 @@ bug3.startFollow
         bullet.body.reset(player.x, player.y);
         bullet.setActive(false);
         bullet.setVisible(false);
-        }, 5000)
+        }, 2000)
 
     },
 
