@@ -1,15 +1,73 @@
-const MainMenu = new Phaser.Class({
+const URL = "http://localhost:3000/users";
 
+let button = document.createElement("button");
+const playAgainButton = () => {
+    button.id = "back-button";
+    button.textContent = "PLAY AGAIN";
+
+    return button.addEventListener("click", (e) => {
+        console.log(e);
+        this.scene.launch("level1");
+    });
+};
+const top10 = () => {
+    let div = document.querySelector(".login");
+    let table = document.createElement("table");
+    let tbody = document.createElement("tbody");
+    playAgainButton();
+
+    table.innerHTML = `<tr>
+            <th scope="col">#</th>
+            <th scope="col">User</th>
+            <th scope="col">Score</th>
+            </tr>
+            </thead>`;
+    generalFetch(URL).then((users) => {
+        i = 0;
+        users.forEach((user) => {
+            i++;
+            tbody.innerHTML += `<tr> 
+                <th>${i}</th>
+                <th>${user.user_name}</th>
+                <th>${user.high_score}</th>
+            </tr>`;
+        });
+    });
+    div.innerHTML = "";
+    table.append(tbody);
+    div.append(table);
+    div.append(button);
+};
+const table = (user) => {
+    let tr = document.createElement("tr");
+};
+
+const generalFetch = (url, options = {}) => {
+    return fetch(url, options).then((res) => res.json());
+};
+
+const makeOptions = (method, body = {}) => {
+    return {
+        method,
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+    };
+};
+
+const MainMenu = new Phaser.Class({
     Extends: Phaser.Scene,
 
-    initialize:
+    initialize: 
+    
+  function MainMenu() {
+        Phaser.Scene.call(this, { key: "menu" });
 
-    function MainMenu ()
-    {
-        Phaser.Scene.call(this, { key: 'menu' });
 
         this.pic;
     },
+
 
     preload: function ()
     {
@@ -28,11 +86,13 @@ const MainMenu = new Phaser.Class({
         this.title_music.play();
 
         this.add.image(0, 0, 'title_screen').setOrigin(0,0);
+
         playButton = this.add.image(
             this.game.config.width / 2,
             this.game.config.height / 2,
             "button-bg"
         );
+
 
         const instruction = this.add.text(384 / 2, 320 * 0.37, 'Move with arrow keys\nJump with UP key\nShoot with SPACEBAR', {
            // fontFamily: 'prstart', fontSize: 12, color: '#ffffff', align: 'center'
@@ -48,7 +108,7 @@ const MainMenu = new Phaser.Class({
             "button-text"
         );
 
-        var container = this.add.container(0, 0).setDepth(1);
+        let container = this.add.container(0, 0).setDepth(1);
 
         container.add(playButton);
         container.add(text);
@@ -60,63 +120,66 @@ const MainMenu = new Phaser.Class({
             function () {
                 playButton.visible = false;
                 text.visible = false;
+
                 this.title_music.stop();
-                    this.scene.pause();
-                    this.scene.launch('level1');
-                //console.log(this);
+                this.scene.pause();
+                this.scene.launch("level1");
+                // this.scene.launch("ui");
+                // this.scene.launch("highScore");
             },
             this
         );
 
-
-        // this.pic = this.add.image(400, 300, 'arrow').setOrigin(0, 0.5);
-
-        // this.input.once('pointerup', function () {
-
-        //     this.scene.pause();
-        //     this.scene.launch('level1');
-
-        // }, this);
-
-        // this.events.on('pause', function () {
-        //     console.log('Main Menu paused');
-        // })
-
-        // this.events.on('resume', function () {
-        //     console.log('Main Menu resumed');
-        // })
     },
 
-    update: function ()
-    {
-       // this.pic.rotation += 0.01;
-    }
 
+    update: function () {
+
+    },
 });
 
 const UI = new Phaser.Class({
-
     Extends: Phaser.Scene,
 
-    initialize:
-
-    function UI ()
-    {
-        Phaser.Scene.call(this, { key: 'ui' });
+    initialize: function UI() {
+        Phaser.Scene.call(this, { key: "ui" });
     },
 
-    preload: function ()
-    {
-;
+    preload: function () {
+        this.load.html("nameform", "assets/loginform.html");
     },
 
-    create: function ()
-    {
-        scoreText = this.add.text(16, 16, "score: 0", {
-            fontSize: "24px",
-            fill: "#000",
+    create: function () {
+        element = this.add.dom(400, 600).createFromCache("nameform");
+        element.setPerspective(800);
+
+        let submit = document.getElementById("login-page").lastElementChild;
+        let input = document.getElementById("login-page").firstElementChild;
+
+        // Post req to backend to store user name and score
+
+        submit.addEventListener("click", (e) => {
+            body = {
+                user_name: input.value,
+                high_score: score,
+            };
+
+            generalFetch(URL, makeOptions("POST", body)).then((_response) => {
+                top10();
+            });
         });
 
+        this.tweens.add({
+            targets: element,
+            y: 300,
+            duration: 3000,
+            ease: "Power3",
+        });
+
+        // scoreText = this.add.text(16, 16, "score: 0", {
+        //     fontSize: "24px",
+        //     fill: "#000",
+        // });
 
         // this.pic = this.add.image(400, 300, 'arrow').setOrigin(0, 0.5);
 
@@ -134,11 +197,14 @@ const UI = new Phaser.Class({
         // this.events.on('resume', function () {
         //     console.log('Main Menu resumed');
         // })
+
+        // );
     },
 
-    update: function ()
-    {
+    update: function () {
         if (gameOver) {
+            input.style.display = "block";
+
             let textConfig = {
                 fontSize: "35px",
                 color: "#ff0000",
@@ -153,7 +219,9 @@ const UI = new Phaser.Class({
 
             this.data.set("score", score);
 
-            var text = this.add.text(player.x + 30, player.y + 30, "", {
+
+            let text = this.add.text(player.x + 30, player.y + 30, "", {
+
                 fontSize: "35px",
                 fill: "#00ff00",
                 fontFamily: "Arial",
@@ -161,15 +229,17 @@ const UI = new Phaser.Class({
 
             text.setText(["SCORE: " + this.data.get("score")]);
             scoreText.visible = false;
+
+
+            this.scene.launch("ui");
         }
 
-         //  Add and update the score
-        score += 10;
-        scoreText.setText("Score: " + score);
-
-    }
-
+        //  Add and update the score
+        // score += 10;
+        // scoreText.setText("Score: " + score);
+    },
 });
+
 
 const Level = new Phaser.Class({
 
@@ -273,6 +343,7 @@ const Level = new Phaser.Class({
             alpha: 0.2,
             yoyo: true,
             repeat: -1,
+
             ease: 'Sine.easeInOut'
         });
         this.tweens.add
@@ -285,12 +356,8 @@ const Level = new Phaser.Class({
         });
 
     this.enemyPaths()
-
     this.createAnimations()
     
-
-
-
 
         //  Input Events
         cursors = this.input.keyboard.createCursorKeys();
@@ -556,6 +623,7 @@ const Level = new Phaser.Class({
     },
 
     createColliders(platforms, walls, hazardCollision_top, hazardCollision_bottom) {
+
         //  Collide the player and the stars with the platforms
         this.physics.add.collider(player, platforms);
         this.physics.add.collider(player, walls);
@@ -580,6 +648,16 @@ const Level = new Phaser.Class({
         this.physics.add.collider(walls, bullet, this.resetBullet, null, this);
         this.physics.add.collider(platforms, bullet, this.resetBullet, null, this);
         this.physics.add.collider(bombs, bullet, this.resetBullet, null, this);
+      
+        this.physics.add.collider(player, hazardCollision_bottom, this.hitBomb, null, this);
+        this.physics.add.collider(player, hazardCollision_top, this.hitBomb, null, this);
+
+        this.physics.add.collider(blob1, bullet, this.enemyHit, null, this);
+        this.physics.add.collider(blob2, bullet, this.enemyHit, null, this);
+        this.physics.add.collider(bug1, bullet, this.enemyHit, null, this);
+        this.physics.add.collider(bug2, bullet, this.enemyHit, null, this);
+        this.physics.add.collider(bug3, bullet, this.enemyHit, null, this);
+        this.physics.add.collider(roboE, bullet, this.enemyHit, null, this);
 
 
 
@@ -593,16 +671,6 @@ const Level = new Phaser.Class({
         this.physics.add.collider(player, bug1, this.hitBomb, null, this);
         this.physics.add.collider(player, bug2, this.hitBomb, null, this);
         this.physics.add.collider(player, bug3, this.hitBomb, null, this);
-
-        this.physics.add.collider(player, hazardCollision_bottom, this.hitBomb, null, this);
-        this.physics.add.collider(player, hazardCollision_top, this.hitBomb, null, this);
-
-        this.physics.add.collider(blob1, bullet, this.enemyHit, null, this);
-        this.physics.add.collider(blob2, bullet, this.enemyHit, null, this);
-        this.physics.add.collider(bug1, bullet, this.enemyHit, null, this);
-        this.physics.add.collider(bug2, bullet, this.enemyHit, null, this);
-        this.physics.add.collider(bug3, bullet, this.enemyHit, null, this);
-        this.physics.add.collider(roboE, bullet, this.enemyHit, null, this);
     },
 
     collectStar (player, keycard)
@@ -643,6 +711,28 @@ const Level = new Phaser.Class({
         this.physics.pause();
         
         this.time.delayedCall(800, this.playerDeath, [], this);
+      
+//       let textConfig = {
+//                 fontSize: "35px",
+//                 color: "#ff0000",
+//                 fontFamily: "Arial",
+//             };
+//             this.add.text(
+//                 player.x, // x axis
+//                 player.y, // y axis
+//                 "GAME OVER",
+//                 textConfig
+//             );
+//             this.data.set("score", score);
+
+//             let text = this.add.text(player.x + 30, player.y + 30, "", {
+//                 fontSize: "35px",
+//                 fill: "#00ff00",
+//                 fontFamily: "Arial",
+//             });
+
+//             text.setText(["SCORE: " + this.data.get("score")]);
+//             scoreText.visible = false;   
     },
 
 
@@ -704,16 +794,16 @@ const Level = new Phaser.Class({
             }
             player.body.setVelocityX(0);
         }
-
-        if (cursors.space.isDown && player.body.onFloor())
-        {
+            if (cursors.space.isDown && player.body.onFloor()) {
             player.body.setVelocityY(-330);
-            player.anims.play('jump', true) && this.playerCollider('jump')
+            player.anims.play("jump", true) && this.playerCollider("jump");
             animationPlayed = false;
-            
         }
-    }
+      }
     },
+
+
+
     playerCollider (animationKey) {
         switch(animationKey) 
         {
@@ -881,7 +971,7 @@ bug3.startFollow
         }
 
         //640 775
-        if (blob1.x >= 775) 
+         if (blob1.x >= 775) 
         {
             blob1.anims.play('blob-walk', true)
             blob1.flipX = true;
@@ -986,6 +1076,27 @@ bug3.startFollow
 
 });
 
+
+const highScore = new Phaser.Class({
+    Extends: Phaser.Scene,
+
+    initialize: function highScore() {
+        Phaser.Scene.call(this, { key: "highScore" });
+    },
+    preload: function () {
+        this.load.html("highscore", "assets/highScore.html");
+    },
+
+    create: function () {
+        document.querySelector(".login").innerHTML = "";
+        // element = this.add.dom(400, 600).createFromCache("highscore");
+        // element.setPerspective(800);
+    },
+    update: function () {},
+});
+
+
+
 let player;
 let cards;
 let bombs;
@@ -995,6 +1106,7 @@ let gameOver = false;
 let scoreText;
 let stateText;
 let gameStart = true;
+let element;
 let lastKeyPress = 'right';
 let animationPlayed = false;
 let playButton;
@@ -1002,21 +1114,24 @@ let bullet;
 let laserPower1 = true;
 let laserPower2 = true;
 
-var config = {
+let config = {
     type: Phaser.AUTO,
     width: 800,
     height: 600,
-    backgroundColor: '#27174a',
-    scene: [ MainMenu, UI, Level],
-    physics: 
-    {
-        default: 'arcade',
-        arcade: 
-        {
+    backgroundColor: "#27174a",
+    scene: [MainMenu, Level, UI, highScore],
+    parent: "login-page",
+    dom: {
+        createContainer: true,
+    },
+    physics: {
+        default: "arcade",
+        arcade: {
             gravity: { y: 600 },
-            debug: true
-        }
-    }
+            debug: false,
+        },
+    },
 };
 
-var game = new Phaser.Game(config);
+let game = new Phaser.Game(config);
+
