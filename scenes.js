@@ -167,17 +167,21 @@ const Level = new Phaser.Class({
 
     preload: function ()
     {
+        this.load.audio('bgm', 'assets/sounds/Cactusdude - 11pm.mp3');
         this.load.image('star', 'assets/star.png');
         this.load.image('bomb', 'assets/bomb.png');
-
+        
         this.load.spritesheet('char', 'assets/spritesheets/entities/player_spritesheet-recolor.png', { frameWidth: 56, frameHeight: 50 });
         this.load.spritesheet('robo', 'assets/spritesheets/entities/bi-pedal_spritesheet.png', { frameWidth: 72, frameHeight: 79 });
         this.load.spritesheet('blob', 'assets/spritesheets/entities/blob_spritesheet.png', { frameWidth: 64, frameHeight: 47 });
         this.load.spritesheet('bug', 'assets/spritesheets/entities/bug_spritesheet.png', { frameWidth: 70, frameHeight: 41 });
+        this.load.spritesheet('enemy-die', 'assets/spritesheets/entities/death_spritesheet.png', { frameWidth: 48, frameHeight: 48 });
 
         this.load.spritesheet('keycard', 'assets/spritesheets/objects/keycards.png', { frameWidth: 16, frameHeight: 16, endFrame: 47 });
         this.load.spritesheet('laser', 'assets/spritesheets/objects/electro barrier.png', { frameWidth: 48, frameHeight: 16, endFrame: 5 });
         this.load.spritesheet('bullet', 'assets/spritesheets/objects/bullet_spritesheet.png', { frameWidth: 16, frameHeight: 10});
+        this.load.spritesheet('impact', 'assets/spritesheets/objects/impact_spritesheet.png', { frameWidth: 16, frameHeight: 16 });
+
 
         this.load.image('tiles', 'assets/tilesets/tileset-merged.png');
         this.load.tilemapTiledJSON('map', 'assets/tilemaps/space_station-tilesetMerged.json');
@@ -186,14 +190,9 @@ const Level = new Phaser.Class({
     create: function ()
     {
         //this.add.image(0, 0, 'sky').setOrigin(0,0);
-        // bullets = this.add.group();
-        // bullets.enableBody = true;
-        // bullets.physicsBodyType = Phaser.Physics.ARCADE;
-        // bullets.createMultiple(3, 'bullet');
-
-        // bullets.callAll('events.onOutOfBounds.add', 'events.onOutOfBounds', this.resetBullet);
-        // bullets.setAll('checkWorldBounds', true);
-
+        this.bgMusic = this.sound.add('bgm', { volume: 0.3 });
+        this.bgMusic.setLoop(true);
+        this.bgMusic.play();
 
         const map = this.make.tilemap({ key: 'map' });
         const tileset = map.addTilesetImage('space-station', 'tiles', 16,16, 0,0);
@@ -206,8 +205,7 @@ const Level = new Phaser.Class({
         robo = this.add.sprite('robo');
         blob = this.add.sprite('blob');
         bug = this.add.sprite('bug');
-
-        blob2 = this.physics.add.sprite(287, 230,'blob');
+        death = this.add.sprite('enemy-die');
 
         player = this.physics.add.sprite(40, 570, 'char');
         player.body.setSize(20, 40, 28)
@@ -232,28 +230,14 @@ const Level = new Phaser.Class({
         key = this.physics.add.sprite(275, 380, 'keycard');
         key.body.moves = false
 
+        impact = this.add.sprite('impact');
         bullet = this.physics.add.sprite('bullet');
+        bullet.body.setSize(10, 5, 0)
+        bullet.body.setOffset(5, 2)
+        bullet.setCollideWorldBounds(true);
 
-    
-        laser1 = this.physics.add.sprite(167, 312, 'laser');
-    this.laserCollision(laser1)
-        laser2 = this.physics.add.sprite(87, 312, 'laser');
-    this.laserCollision(laser2)
-        laser3 = this.physics.add.sprite(247, 312, 'laser');
-    this.laserCollision(laser3)
-
-        laser4 = this.physics.add.sprite(359, 200, 'laser');
-    this.laserCollision(laser4, 2)
-        laser5 = this.physics.add.sprite(311, 200, 'laser');
-    this.laserCollision(laser5, 2)
-        laser6 = this.physics.add.sprite(263, 200, 'laser');
-    this.laserCollision(laser6, 2)
-        laser7 = this.physics.add.sprite(215, 200, 'laser');
-    this.laserCollision(laser7, 2)
-
-
-        
-        
+        this.createLasers()
+        this.time.addEvent({ delay: 3000, callback: this.laserSwitch, callbackScope: this, loop: true });
 
         //------------Hazard Glow
         this.tweens.add
@@ -303,7 +287,7 @@ const Level = new Phaser.Class({
         //  The score
         scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '24px', fill: '#000' });
 
-    this.startColliders(platforms, walls, hazardCollision_bottom, hazardCollision_bottom)
+    this.createColliders(platforms, walls, hazardCollision_bottom, hazardCollision_bottom)
         
 
        //this.cameras.main.zoom = 1.5;
@@ -319,14 +303,8 @@ const Level = new Phaser.Class({
 
     update: function ()
     {
-        if(cursors.up.isDown) 
-        {
-            this.fireBullet(player.x, player.y)
-        }
- 
-        //this.time.addEvent({ delay: 2000, callback: this.laserSwitch, callbackScope: this, loop: true });
-
         key.anims.play('key-rotate', true)
+
         laser1.anims.play('laser1', true)
         laser2.anims.play('laser1', true)
         laser3.anims.play('laser1', true)
@@ -371,6 +349,7 @@ const Level = new Phaser.Class({
             key: 'die',
             frames: this.anims.generateFrameNumbers('char', { start: 39, end: 42 }),
             frameRate: 10,
+            hideOnComplete: true,
             repeat: 0
         });
         this.anims.create({
@@ -407,6 +386,14 @@ const Level = new Phaser.Class({
         });
 
         this.anims.create({
+            key: 'dieE',
+            frames: this.anims.generateFrameNumbers('enemy-die', { start: 0, end: 4 }),
+            frameRate: 10,
+            hideOnComplete: true,
+            repeat: 0
+        });
+
+        this.anims.create({
             key: 'key-rotate',
             frames: this.anims.generateFrameNumbers('keycard', { start: 8, end: 15 }),
             frameRate: 5,
@@ -431,66 +418,109 @@ const Level = new Phaser.Class({
             frameRate: 10,
             repeat: -1
         });
+        this.anims.create({
+            key: 'impactB',
+            frames: this.anims.generateFrameNumbers('impact', { start: 0, end: 3 }),
+            frameRate: 10,
+            hideOnComplete: true,
+            repeat: 0
+        });
+    },
+    createLasers() {
+            laser1 = this.physics.add.sprite(167, 312, 'laser');
+        this.laserCollision(laser1)
+            laser2 = this.physics.add.sprite(87, 312, 'laser');
+        this.laserCollision(laser2)
+            laser3 = this.physics.add.sprite(247, 312, 'laser');
+        this.laserCollision(laser3)
+    
+            laser4 = this.physics.add.sprite(359, 200, 'laser');
+        this.laserCollision(laser4, 2)
+            laser5 = this.physics.add.sprite(311, 200, 'laser');
+        this.laserCollision(laser5, 2)
+            laser6 = this.physics.add.sprite(263, 200, 'laser');
+        this.laserCollision(laser6, 2)
+            laser7 = this.physics.add.sprite(215, 200, 'laser');
+        this.laserCollision(laser7, 2)
+    
     },
 
     laserCollision(name, size = 1.5) {
         name.setScale(size)
         name.angle = 90
-        name.body.setSize(10, 48, 0)
-        name.body.setOffset(20, -16)
+        name.body.setSize(5, 48, 0)
+        name.body.setOffset(22, -16)
 
         name.body.moves = false
         collider = this.physics.add.collider(player, name, this.hitBomb, null, this);
 
     },
     laserSwitch() {
-        //this.time.addEvent({ delay: 2000, callback: this.laserSwitch(laser1), callbackScope: this, loop: true });
-        switch(laserPower) 
+        if (!gameOver) {
+
+        setTimeout(() => {
+            switch(laserPower1) 
         {
-            default:
-                laserPower = true;
-                break;
             case true:
-                laser1.collider.active = false;
+                laser1.body.enable = false;
                 laser1.setActive(false).setVisible(false)
-                laser2.collider.active = false;
+                laser2.body.enable = false;
                 laser2.setActive(false).setVisible(false)
-                laser3.collider.active = false;
+                laser3.body.enable = false;
                 laser3.setActive(false).setVisible(false)
-                laser4.collider.active = false;
-                laser4.setActive(false).setVisible(false)
-                laser5.collider.active = false;
-                laser5.setActive(false).setVisible(false)
-                laser6.collider.active = false;
-                laser6.setActive(false).setVisible(false)
-                laser7.collider.active = false;
-                laser7.setActive(false).setVisible(false)
 
-                laserPower = false;
+                laserPower1 = false;
                 break;
+            
             case false:
-                laser1.collider.active = true;
+                laser1.body.enable = true;
                 laser1.setActive(true).setVisible(true)
-                laser2.collider.active = true;
+                laser2.body.enable = true;
                 laser2.setActive(true).setVisible(true)
-                laser3.collider.active = true;
+                laser3.body.enable = true;
                 laser3.setActive(true).setVisible(true)
-                laser4.collider.active = true;
-                laser4.setActive(true).setVisible(true)
-                laser5.collider.active = true;
-                laser5.setActive(true).setVisible(true)
-                laser6.collider.active = true;
-                laser6.setActive(true).setVisible(true)
-                laser7.collider.active = true;
-                laser7.setActive(true).setVisible(true)
 
-                laserPower = true;
+                laserPower1 = true;
                 break;
         }
-        
+         }, 500);
+
+         setTimeout(() => {
+            switch(laserPower2) 
+        {
+            case true:
+                laser4.body.enable = false;
+                laser4.setActive(false).setVisible(false)
+                laser5.body.enable = false;
+                laser5.setActive(false).setVisible(false)
+                laser6.body.enable = false;
+                laser6.setActive(false).setVisible(false)
+                laser7.body.enable = false;
+                laser7.setActive(false).setVisible(false)
+            
+
+                laserPower2 = false;
+                break;
+            
+            case false:
+                laser4.body.enable = true;
+                laser4.setActive(true).setVisible(true)
+                laser5.body.enable = true;
+                laser5.setActive(true).setVisible(true)
+                laser6.body.enable = true;
+                laser6.setActive(true).setVisible(true)
+                laser7.body.enable = true;
+                laser7.setActive(true).setVisible(true)
+
+                laserPower2 = true;
+                break;
+        }
+         }, 3000);
+         
+        }
     },
 
-    startColliders(platforms, walls, hazardCollision_top, hazardCollision_bottom) {
+    createColliders(platforms, walls, hazardCollision_top, hazardCollision_bottom) {
         //  Collide the player and the stars with the platforms
         this.physics.add.collider(player, platforms);
         this.physics.add.collider(player, walls);
@@ -511,8 +541,11 @@ const Level = new Phaser.Class({
         this.physics.add.collider(stars, walls);
         this.physics.add.collider(bombs, platforms);
         this.physics.add.collider(bombs, walls);
-        this.physics.add.collider(bullet, platforms);
-        this.physics.add.collider(bullet, walls);
+        // this.physics.add.collider(bullet, platforms);
+        // this.physics.add.collider(bullet, walls);
+
+        this.physics.add.collider(walls, bullet, this.resetBullet, null, this);
+        this.physics.add.collider(platforms, bullet, this.resetBullet, null, this);
 
 
 
@@ -531,6 +564,11 @@ const Level = new Phaser.Class({
         this.physics.add.collider(player, hazardCollision_top, this.hitBomb, null, this);
 
         this.physics.add.collider(blob1, bullet, this.enemyHit, null, this);
+        this.physics.add.collider(blob2, bullet, this.enemyHit, null, this);
+        this.physics.add.collider(bug1, bullet, this.enemyHit, null, this);
+        this.physics.add.collider(bug2, bullet, this.enemyHit, null, this);
+        this.physics.add.collider(bug3, bullet, this.enemyHit, null, this);
+        this.physics.add.collider(roboE, bullet, this.enemyHit, null, this);
     },
 
     collectStar (player, star)
@@ -563,38 +601,27 @@ const Level = new Phaser.Class({
     {
         gameOver = true;
         player.setTint(0xff0000);
+        player.body.setEnable(false);
         player.anims.play('die');
         this.physics.pause();
         
         this.time.delayedCall(800, this.playerDeath, [], this);
     },
 
-    enemyHit (enemy, bullet)
-    {
-        bullet.body.reset(player.x, player.y);
-
-        bullet.setActive(false);
-        bullet.setVisible(false);
-        enemy.setTint(0xff0000);
-
-        //enemy.anims.pause()
-        //enemy.anims.play('enemy-die');
-        //this.physics.pause();
-        
-        this.time.delayedCall(2000, this.enemyDeath(enemy), [], this);
-    },
-
-    enemyDeath(enemy) {
-        enemy.destroy()  
-    },
 
     playerDeath() {
-        this.scene.pause()
+        this.scene.stop()
         this.scene.start('menu') 
         gameOver = false;  
     },
     playerMove() {
     if(!gameOver) {
+
+        if(cursors.up.isDown) 
+        {
+            this.fireBullet(player.x, player.y)
+        }
+        
         if (cursors.left.isDown) 
         {
             player.body.setVelocityX(-160);
@@ -665,7 +692,6 @@ const Level = new Phaser.Class({
                 break;
         }
     },
-
     
     enemyPaths () {
    let enemyPath  = this.add.graphics();
@@ -689,30 +715,44 @@ const Level = new Phaser.Class({
        loop: -1,
    });
 //------------------BLOB2----------------------
-   blob2.body.setSize(50, 45, 32)
-   blob2.body.setOffset(8, 0)
+    blob2Path = this.add.path(170, 230);
+    blob2Path.lineTo(390, 230);
+
+    blob2 =  this.add.follower(blob2Path, 0, 0, 'blob')
+    this.physics.world.enable(blob2)
+    blob2.body.setSize(50, 45, 32)
+    blob2.body.setOffset(8, 0)
+
+    blob2.startFollow
+    ({
+        positionOnPath: true,
+        duration: 14000,
+        yoyo: true,
+        loop: -1,
+    });
 //-------------------BUG1----------------------
 
-bug1Path = this.add.path(630, 350);
-bug1Path.splineTo([ 766,347, 754,447, 688,413, 642,411, 575,480, 515,456, 562,439]);
+    bug1Path = this.add.path(630, 350);
+    bug1Path.splineTo([ 766,347, 754,447, 688,413, 642,411, 575,480, 515,456, 562,439]);
 
-bug1 =  this.add.follower(bug1Path, 0, 0, 'bug')
-this.physics.world.enable(bug1)
-bug1.setScale(.75)
-bug1.body.moves = false
-bug1.body.setSize(30, 30, 45)
-bug1.body.setOffset(20, 5)
+    bug1 =  this.add.follower(bug1Path, 0, 0, 'bug')
+    this.physics.world.enable(bug1)
+    bug1.setScale(.75)
+    bug1.body.setAllowGravity(false)
+    bug1.body.setSize(30, 30, 45)
+    bug1.body.setOffset(20, 5)
 
-bug1.startFollow
-({
-    positionOnPath: true,
-    duration: 14000,
-    rotateToPath: true,
-    rotationOffset: -90,
-    ease: 'Sine.easeInOut',
-    yoyo: true,
-    loop: -1,
-});
+    bug1.startFollow
+    ({
+        positionOnPath: true,
+        duration: 14000,
+        rotateToPath: true,
+        rotationOffset: -90,
+        ease: 'Sine.easeInOut',
+        yoyo: true,
+        loop: -1,
+    });
+
 //-------------------BUG2----------------------
 
 bug2Path = this.add.path(450, 165);
@@ -721,7 +761,7 @@ bug2Path.splineTo([ 590, 250, 475, 340, 490, 470]);
 bug2 =  this.add.follower(bug2Path, 0, 0, 'bug')
 this.physics.world.enable(bug2)
 bug2.setScale(.75)
-bug2.body.moves = false
+bug2.body.setAllowGravity(false)
 bug2.body.setSize(30, 30, 45)
 bug2.body.setOffset(20, 5)
 
@@ -742,7 +782,7 @@ bug3Path.splineTo([ 639, 535, 552, 560, 451, 546]);
 bug3 =  this.add.follower(bug3Path, 0, 0, 'bug')
 this.physics.world.enable(bug3)
 bug3.setScale(.75)
-bug3.body.moves = false
+bug3.body.setAllowGravity(false)
 bug3.body.setSize(30, 30, 45)
 bug3.body.setOffset(20, 5)
 
@@ -755,6 +795,7 @@ bug3.startFollow
     yoyo: true,
     loop: -1,
 });
+
 //------------------ROBO----------------------
    roboPath = this.add.path(400, 66);
    roboPath.lineTo(625, 66);
@@ -774,71 +815,130 @@ bug3.startFollow
 
     },
     enemyAnim() {
-    //400 625
-    if (roboE.x >= 625) 
-    {
-        roboE.anims.play('robo-walk', true)
-        roboE.flipX = true;
-    } 
-    else if (roboE.x <= 400) 
-    {
-        roboE.anims.play('robo-walk', true)
-        roboE.flipX = false;
-    }
 
-    //640 775
-    if (blob1.x >= 775) 
-    {
-        blob1.anims.play('blob-walk', true)
-        blob1.flipX = true;
-    } 
-    else if (blob1.x <= 640) 
-    {
-        blob1.anims.play('blob-walk', true)
-        blob1.flipX = false;
-    }
-
-    blob2.anims.play('blob-walk', true)
-    bug1.anims.play('bug-walk', true)
-    bug2.anims.play('bug-walk', true)
-    bug3.anims.play('bug-walk', true)
+        if (bug1.isFollowing()) 
+        {
+            bug1.anims.play('bug-walk' ,true)
+        }
+        if(bug2.isFollowing()) 
+        {
+            bug2.anims.play('bug-walk' ,true)
+        } 
+        if(bug3.isFollowing()) 
+        {
+            bug3.anims.play('bug-walk' ,true)
+        }
 
 
+        //400 625
+        if (roboE.x >= 625) 
+        {
+            roboE.anims.play('robo-walk', true)
+            roboE.flipX = true;
+        } 
+        else if (roboE.x <= 400) 
+        {
+            roboE.anims.play('robo-walk', true)
+            roboE.flipX = false;
+        }
 
+        //640 775
+        if (blob1.x >= 775) 
+        {
+            blob1.anims.play('blob-walk', true)
+            blob1.flipX = true;
+        } 
+        else if (blob1.x <= 640) 
+        {
+            blob1.anims.play('blob-walk', true)
+            blob1.flipX = false;
+        }
 
+        //640 775
+        if (blob2.x >= 390) 
+        {
+            blob2.anims.play('blob-walk', true)
+            blob2.flipX = true;
+        } 
+        else if (blob2.x <= 170) 
+        {
+            blob2.anims.play('blob-walk', true)
+            blob2.flipX = false;
+        }
     },
 
     fireBullet(x, y) 
     {
-        //bullet.body.moves = false
-        bullet.body.reset(x, y);
 
+    // setTimeout(() => { 
+    // }, 5000)
+    
+        bullet.body.reset(x, y);
+        bullet.body.setAllowGravity(false)
         bullet.setActive(true);
         bullet.setVisible(true);
         
-
         bullet.anims.play('shoot', true)
-        //player.anims.play('player-shoot', true)
-        if (lastKeyPress === 'left')
+       
+        if (lastKeyPress === 'left' && cursors.down.isDown)
+        {
+            bullet.setPosition((x - 25),(y + 7))
+            bullet.flipX = true;
+            bullet.setVelocityX(-500);
+        }
+        else if (lastKeyPress === 'left' && !cursors.down.isDown)
         {
             bullet.setPosition((x - 25),(y - 2))
             bullet.flipX = true;
             bullet.setVelocityX(-500);
-            bullet.setVelocityY(0);
-        } 
-        else if (lastKeyPress === 'right')
+
+        }
+        else if (lastKeyPress === 'right' && cursors.down.isDown)
+        {
+            bullet.setPosition((x + 25),(y + 7))
+            bullet.flipX = false;
+            bullet.setVelocityX(500);
+        }
+        else if (lastKeyPress === 'right' && !cursors.down.isDown)
         {
             bullet.setPosition((x + 25),(y - 2))
             bullet.flipX = false;
             bullet.setVelocityX(500);
-            bullet.setVelocityY(0);
-
         }
+    
+    },
 
+    resetBullet() {
 
+        bullet.anims.play('impactB', false);
 
+        setTimeout(() => { 
+        bullet.body.reset(player.x, player.y);
+        bullet.setActive(false);
+        bullet.setVisible(false);
+        }, 5000)
 
     },
+
+   enemyHit (enemy, bullet)
+   {
+    //    bullet.body.reset(player.x, player.y);
+    //    bullet.setActive(false);
+    //    bullet.setVisible(false);
+
+        enemy.pauseFollow();
+        enemy.setTint(0xff0000);
+        enemy.clearTint();
+
+       enemy.play('dieE', false);
+       
+       enemy.body.enable = false;
+
+        setTimeout(() => { 
+            enemy.setActive(false);
+            enemy.setVisible(false);
+        }, 2000)
+   },
 
 
 });
@@ -855,23 +955,23 @@ let gameStart = true;
 let lastKeyPress = 'right';
 let animationPlayed = false;
 let playButton;
-//let laserPower;
 let bullet;
-
+let laserPower1 = true;
+let laserPower2 = true;
 
 var config = {
     type: Phaser.AUTO,
     width: 800,
     height: 600,
     backgroundColor: '#27174a',
-    scene: [ MainMenu, Level ],
+    scene: [ MainMenu, UI, Level],
     physics: 
     {
         default: 'arcade',
         arcade: 
         {
             gravity: { y: 600 },
-            debug: true
+            debug: false
         }
     }
 };
