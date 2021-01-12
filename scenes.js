@@ -1,4 +1,4 @@
-const URL = "http://localhost:3000/users";
+const URL = "https://shielded-mountain-86289.herokuapp.com/";
 
 let button = document.createElement("button");
 
