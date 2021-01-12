@@ -1,4 +1,4 @@
-const URL = "https://shielded-mountain-86289.herokuapp.com/";
+const URL = "https://shielded-mountain-86289.herokuapp.com/users";
 
 let button = document.createElement("button");
 
