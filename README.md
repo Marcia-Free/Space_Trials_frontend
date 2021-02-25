@@ -17,7 +17,7 @@ Coming Soon
 ## Built With
 * Phaser3 JS Game Engine
 * Javascript frontend
-* Rails backend here (link here)
+* Rails backend here (https://github.com/Marcia-Free/Space_Trials_backend)
 * HTML and CSS
 
 ### Install Instructions
