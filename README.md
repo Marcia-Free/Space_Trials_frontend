@@ -1,6 +1,6 @@
 # Space Trials frontend
 
-This is a Ruby on Rails application. Neon themed totally serious fighter game. Hope you enjoy!
+This is Phaser3 2D plaftormer made with Javascript.
 
 
 ## Link to Demo Video
