@@ -22,7 +22,7 @@ Coming Soon
 
 ### Install Instructions
 1. Run ```bundle install```
-2. http-server
+2. ```http-server```
 4. Enjoy!
 
 
