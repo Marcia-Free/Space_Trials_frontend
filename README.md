@@ -4,9 +4,7 @@ This is Phaser3 2D plaftormer made with Javascript.
 
 
 ## Link to Demo Video
-
-video link below
-Coming Soon
+https://youtu.be/5gz5DKMdtH8
 
 ## Application Features
 * A user can start a game
