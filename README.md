@@ -4,7 +4,9 @@ This is Phaser3 2D plaftormer made with Javascript.
 
 
 ## Link to Demo Video
-https://youtu.be/5gz5DKMdtH8
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=5gz5DKMdtH8
+" target="_blank"><img src="http://img.youtube.com/vi/5gz5DKMdtH8/0.jpg" 
+alt="Space Trials Game" width="240" height="180" border="10" /></a>
 
 ## Application Features
 * A user can start a game
