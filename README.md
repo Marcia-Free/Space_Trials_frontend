@@ -19,7 +19,7 @@ alt="Space Trials Game" width="240" height="180" border="10" /></a>
 ## Built With
 * Phaser3 JS Game Engine
 * Javascript frontend
-* Rails backend here (https://github.com/Marcia-Free/Space_Trials_backend)
+* Rails backend [here](https://github.com/Marcia-Free/Space_Trials_backend)
 * HTML and CSS
 
 ### Install Instructions
