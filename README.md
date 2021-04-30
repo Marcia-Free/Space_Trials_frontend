@@ -1,6 +1,6 @@
 # Space Trials frontend
 
-This is Phaser3 2D plaftormer made with Javascript.
+This is Phaser3 2D plaftormer made with Javascript. My role for this project was Game Developer, Pixel Artist, and Frontend Programmer.
 
 
 ## Link to Demo Video
